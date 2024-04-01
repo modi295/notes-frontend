@@ -3,12 +3,12 @@ import personCard from './personCard'; // Import the personCard component
 
 const peopleData = [
   {
-    imageSrc: 'customer-1.png', // Replace with your image path
-    name: 'Walter Meller',
-    title: 'Founder & CEO',
-    company: 'Matrix Group',
+    imageSrc: 'ChamanModi.jpg', // Replace with your image path
+    name: 'Chaman Modi',
+    title: 'Software Enginner',
+    company: 'Tatvasoft',
     quote:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit Lorem ipsum dolor sit amet, consectetur adipiscing elit',
+      '"Code is poetry written in a language only computers understand."',
   },
   {
     imageSrc: 'customer-2.png', // Replace with your image path
