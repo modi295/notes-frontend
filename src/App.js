@@ -5,6 +5,8 @@ import Home from './Screen/Home';
 import Faq from './Screen/Faq';
 import ContactUs from './Screen/contactUs';
 import SearchNote from './Screen/searchNote';
+import Login from './Screen/Login';
+
 
 const router = createBrowserRouter([
   {
@@ -14,6 +16,10 @@ const router = createBrowserRouter([
   {
     path: "/faq",
     element: <div><Navigation /><Faq /></div>,
+  },
+  {
+    path: "/login",
+    element: <div><Navigation /><Login /></div>,
   },
   {
     path: "/searchNote",

@@ -19,7 +19,7 @@ function Navigation() {
           <a href="/your-actual-url-2" className="nav-link text-black my-2">Sell Your Notes</a>
           <Link to="/faq" className="nav-link text-black my-2">FAQ</Link>
           <Link to="/contactUs" className="nav-link text-black my-2">Contact Us</Link>
-          <a href="/login" className="nav-link btn btn-sm" style={linkStyle}>Login</a>
+          <Link to="/login" className="nav-link btn btn-sm" style={linkStyle}>Login</Link>
         </nav>
       </div>
     </header>
