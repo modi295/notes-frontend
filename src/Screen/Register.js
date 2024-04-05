@@ -1,0 +1,112 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import '../css/Login.css'
+import api from '../Services/api';
+
+function Register() {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
+
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [registrationSuccess, setRegistrationSuccess] = useState(false); // State for registration success
+    const [passwordsMatchError, setPasswordsMatchError] = useState(false);
+    const [passwordLengthError, setPasswordLengthError] = useState(false);
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(!showConfirmPassword); // Toggle confirm password visibility
+    };
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword); // Toggle password visibility
+    };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (password.length < 8) {
+            setPasswordLengthError(true);
+            return;
+        }
+        if (password !== confirmPassword) {
+            setPasswordsMatchError(true); // Set error state
+            return;
+        }
+        try {
+            await api.post('/auth/register', { firstName, lastName, email, password });
+            setRegistrationSuccess(true); // Set registration success state
+            setPasswordsMatchError(false);
+        } catch (error) {
+            alert('Error creating account: ' + error.response.data.error);
+        }
+    };
+
+    return (
+        <div className="register-container">
+            <div className="row">
+                <div className="logo">
+                    <img src="top-logo.png" alt="Logo" />
+                </div>
+                <div className="col-md-12 d-flex justify-content-center align-items-center ">
+                    <div className="register-form ">
+                        <div className="login-text">
+                            <h1 >Create an Account</h1>
+                            <p >Enter your details to SignUp</p>
+                        </div>
+                        {registrationSuccess && ( // Conditionally render success message
+                            <p className="login-success">
+                                <span className="tick" style={{ color: 'green' }}>&#10004;</span> Your account has been successfully created!
+                            </p>
+                        )}
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label htmlFor="text">First Name<span className="required">*</span></label>
+                                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="form-control" placeholder="Enter your First name" required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="email">Last Name<span className="required">*</span></label>
+                                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="form-control" placeholder="Enter your Last name" required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="email">Email Address<span className="required">*</span></label>
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" placeholder="Enter your Email" required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="password">Password<span className="required">*</span></label>
+                                <div className="password-container">
+                                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => {setPassword(e.target.value); setPasswordLengthError(false);}} placeholder="Enter Password" className="form-control" required />
+                                    <i className={`fas fa-eye${showPassword ? '' : '-slash'}`} onClick={togglePasswordVisibility}></i>
+                                </div>
+                                {passwordLengthError && (
+                                    <div className="error-message" style={{ color: 'red' }}>
+                                        Password must be at least 8 characters long!
+                                    </div>
+                                )}
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="password">Confirm Password<span className="required">*</span></label>
+                                <div className="password-container">
+                                    <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value);setPasswordsMatchError(false);}} placeholder="Confirm Password" className="form-control" required />
+                                    <i className={`fas fa-eye${showConfirmPassword ? '' : '-slash'}`} onClick={toggleConfirmPasswordVisibility} ></i>
+                                </div>
+                                {passwordsMatchError && (
+                                    <div className="error-message" style={{ color: 'red' }}>
+                                        Passwords do not match!
+                                    </div>
+                                )}
+                            </div>
+                            <button type="submit" className="btn-login">
+                                LOGIN
+                            </button>
+                            <div className="text-muted">
+                                Already have an account? <Link to="/login" className='link'>Login</Link>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default Register
