@@ -2,6 +2,7 @@ import React, { useState} from 'react';
 import { Link } from 'react-router-dom';
 import '../css/Login.css';
 import api from '../Services/api';
+import Cookies from 'js-cookie';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -18,7 +19,10 @@ function Login() {
         try {
             const response = await api.post('/auth/login', { email, password });
             const token = response.data.token;
-            localStorage.setItem('token', token);
+            // localStorage.setItem('token', token);
+            // localStorage.setItem('email', email);
+            Cookies.set('token', token, { expires: 7 }); // Expires in 7 days
+            Cookies.set('email', email);
             console.log("login successfully");
             setLoginSuccess(true); // Set login success state
         } catch (error) {
@@ -61,7 +65,7 @@ function Login() {
                             </div>
                             <div className="form-group">
                                 <label htmlFor="password">Password<span className="required">*</span></label>
-                                <a href="k" className="text-muted forgot-password">
+                                <a href="/forgotPassword" className="text-muted forgot-password">
                                     Forgot Password?
                                 </a>
                                 <div className="password-container">

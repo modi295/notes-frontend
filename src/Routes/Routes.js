@@ -6,6 +6,7 @@ import ContactUs from '../Screen/contactUs';
 import SearchNote from '../Screen/searchNote';
 import Login from '../Screen/Login';
 import Register from "../Screen/Register";
+import ForgotPassword from "../Screen/ForgotPassword";
 
 
 const router = createBrowserRouter([
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
     {
       path: "/contactUs",
       element: <div><Navigation /><ContactUs /></div>,
+    },
+    {
+      path: "/forgotPassword",
+      element: <div><Navigation /><ForgotPassword /></div>,
     },
   ]);
   export default router

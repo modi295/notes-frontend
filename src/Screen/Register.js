@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import '../css/Login.css'
 import api from '../Services/api';
 
@@ -15,6 +15,7 @@ function Register() {
     const [registrationSuccess, setRegistrationSuccess] = useState(false); // State for registration success
     const [passwordsMatchError, setPasswordsMatchError] = useState(false);
     const [passwordLengthError, setPasswordLengthError] = useState(false);
+    const navigate = useNavigate();
 
     const toggleConfirmPasswordVisibility = () => {
         setShowConfirmPassword(!showConfirmPassword); // Toggle confirm password visibility
@@ -22,12 +23,19 @@ function Register() {
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword); // Toggle password visibility
     };
+    const strongPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])[^\s]{6,24}$/;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (password.length < 8) {
-            setPasswordLengthError(true);
+        
+        // if (password.length < 8) {
+        //     setPasswordLengthError(true);
+        //     return;
+        // }
+        if (!strongPasswordRegex.test(password)) {
+            setPasswordLengthError(true); // Update error message to mention specific requirements
             return;
-        }
+          }
         if (password !== confirmPassword) {
             setPasswordsMatchError(true); // Set error state
             return;
@@ -36,6 +44,7 @@ function Register() {
             await api.post('/auth/register', { firstName, lastName, email, password });
             setRegistrationSuccess(true); // Set registration success state
             setPasswordsMatchError(false);
+           // navigate('/login'); 
         } catch (error) {
             alert('Error creating account: ' + error.response.data.error);
         }
@@ -74,12 +83,12 @@ function Register() {
                             <div className="form-group">
                                 <label htmlFor="password">Password<span className="required">*</span></label>
                                 <div className="password-container">
-                                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => {setPassword(e.target.value); setPasswordLengthError(false);}} placeholder="Enter Password" className="form-control" required />
+                                    <input type={showPassword ? 'text' : 'password'} maxLength={24} value={password} onChange={(e) => {setPassword(e.target.value); setPasswordLengthError(false);}} placeholder="Enter Password" className="form-control" required />
                                     <i className={`fas fa-eye${showPassword ? '' : '-slash'}`} onClick={togglePasswordVisibility}></i>
                                 </div>
                                 {passwordLengthError && (
                                     <div className="error-message" style={{ color: 'red' }}>
-                                        Password must be at least 8 characters long!
+                                        Password must be at least 6to 24 characters long with UpperCase,Lowercase,Number and Special Characters!
                                     </div>
                                 )}
                             </div>
