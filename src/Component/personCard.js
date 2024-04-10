@@ -13,7 +13,7 @@ function personCard({ imageSrc = "", name = "", title = "", company = "", quote 
                     </div>
                     <div className="col-lg-8">
                         <p className="fw-bold lead mb-2 p-text"><strong>{name}</strong></p>
-                        <p className="fw-bold text-muted mb-0">{title}, {company}</p>
+                        <p className="fw-bold mb-0">{title}, {company}</p>
                     </div>
                 </div>
                 <div className="row mt-4">

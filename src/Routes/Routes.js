@@ -1,4 +1,5 @@
 import {createBrowserRouter} from "react-router-dom";
+import React from 'react';
 import Navigation from '../Component/Navigation';
 import Home from '../Screen/Home';
 import Faq from '../Screen/Faq';
@@ -8,6 +9,7 @@ import Login from '../Screen/Login';
 import Register from "../Screen/Register";
 import ForgotPassword from "../Screen/ForgotPassword";
 
+import Protected from "./protected";
 
 const router = createBrowserRouter([
     {
@@ -16,7 +18,7 @@ const router = createBrowserRouter([
     },
     {
       path: "/faq",
-      element: <div><Navigation /><Faq /></div>,
+      element: <div><Navigation />{<Protected Component={Faq}/>}</div>,
     },
     {
       path: "/login",
@@ -32,7 +34,7 @@ const router = createBrowserRouter([
     },
     {
       path: "/contactUs",
-      element: <div><Navigation /><ContactUs /></div>,
+      element: <div><Navigation />{<Protected Component={ContactUs}/>}</div>,
     },
     {
       path: "/forgotPassword",

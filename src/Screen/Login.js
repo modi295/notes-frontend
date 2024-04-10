@@ -19,10 +19,10 @@ function Login() {
         try {
             const response = await api.post('/auth/login', { email, password });
             const token = response.data.token;
-            // localStorage.setItem('token', token);
-            // localStorage.setItem('email', email);
-            Cookies.set('token', token, { expires: 7 }); // Expires in 7 days
-            Cookies.set('email', email);
+            localStorage.setItem('token', token);
+            localStorage.setItem('email', email);
+            // Cookies.set('token', token, { expires: 7 }); // Expires in 7 days
+            // Cookies.set('email', email);
             console.log("login successfully");
             setLoginSuccess(true); // Set login success state
         } catch (error) {
