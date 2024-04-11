@@ -10,7 +10,7 @@ function ForgotPassword() {
         e.preventDefault();
         
         try {
-            await api.post('/auth/forgotPassword', {email});
+            await api.post('/forgotPassword', {email});
             setPasswordUpdateSuccess(true); 
             console.log("mail sent");
         } catch (error) {

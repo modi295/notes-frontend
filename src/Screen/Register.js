@@ -7,9 +7,9 @@ function Register() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
-
     const [password, setPassword] = useState('');
+
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [registrationSuccess, setRegistrationSuccess] = useState(false); // State for registration success
@@ -41,7 +41,7 @@ function Register() {
             return;
         }
         try {
-            await api.post('/auth/register', { firstName, lastName, email, password });
+            await api.post('/register', { firstName, lastName, email, password });
             setRegistrationSuccess(true); // Set registration success state
             setPasswordsMatchError(false);
            // navigate('/login'); 
@@ -105,7 +105,7 @@ function Register() {
                                 )}
                             </div>
                             <button type="submit" className="btn-login">
-                                LOGIN
+                                SIGN UP
                             </button>
                             <div className="text-muted">
                                 Already have an account? <Link to="/login" className='link'>Login</Link>

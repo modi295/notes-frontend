@@ -10,6 +10,7 @@ import Register from "../Screen/Register";
 import ForgotPassword from "../Screen/ForgotPassword";
 
 import Protected from "./protected";
+import UserProfile from "../Screen/UserProfile";
 
 const router = createBrowserRouter([
     {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
     {
       path: "/forgotPassword",
       element: <div><Navigation /><ForgotPassword /></div>,
+    },
+    {
+      path: "/userprofile",
+      element: <div><Navigation /><UserProfile /></div>,
     },
   ]);
   export default router

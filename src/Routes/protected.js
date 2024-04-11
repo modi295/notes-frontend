@@ -22,7 +22,7 @@ function Protected(props) {
 
     const canAccessComponent = (email, path) => {
         if ((path === '/contactUs' || path === '/faq') && email !== 'Admin@gmail.com') {
-            return false;
+            return true;
         }
         return true;
     };
