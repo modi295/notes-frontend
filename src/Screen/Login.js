@@ -1,8 +1,8 @@
 import React, { useState} from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../css/Login.css';
 import api from '../Services/api';
-import Cookies from 'js-cookie';
+
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -10,6 +10,7 @@ function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [loginSuccess, setLoginSuccess] = useState(false); // State for login success
     const [errorMessage, setErrorMessage] = useState('');
+    const navigate = useNavigate();
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword); // Toggle password visibility
@@ -25,6 +26,8 @@ function Login() {
             // Cookies.set('email', email);
             console.log("login successfully");
             setLoginSuccess(true); // Set login success state
+            // navigate('/userprofile');
+            window.location.reload(); 
         } catch (error) {
 
             if (error.response && error.response.status === 401) {

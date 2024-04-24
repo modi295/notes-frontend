@@ -1,28 +1,28 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
+import { isLoggedIn } from '../Services/auth';
 
 
 function Protected(props) {
-    const { Component } = props;
+    const { Component , access = false } = props;
     const navigate = useNavigate();
     useEffect(() => {
-        const userEmail = localStorage.getItem('email');
-        const userToken = localStorage.getItem('token');
+         const userEmail = localStorage.getItem('email');
+       
 
-        if (!(userEmail && userToken)) {
+        if (!(isLoggedIn())) {
             navigate('/login');
         } else {
-            // Additional validation for accessing FAQ component
-            if (!canAccessComponent(userEmail, window.location.pathname)) {
+            if (access && !canAccessComponent(userEmail, window.location.pathname)) {
                 alert("you don't have rights to access this page")
                 navigate('/');
             }
         }
-    }, [navigate]);
+    }, [navigate,access]);
 
     const canAccessComponent = (email, path) => {
         if ((path === '/contactUs' || path === '/faq') && email !== 'Admin@gmail.com') {
-            return true;
+            return false;
         }
         return true;
     };

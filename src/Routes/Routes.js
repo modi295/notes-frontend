@@ -8,9 +8,10 @@ import SearchNote from '../Screen/searchNote';
 import Login from '../Screen/Login';
 import Register from "../Screen/Register";
 import ForgotPassword from "../Screen/ForgotPassword";
-
 import Protected from "./protected";
 import UserProfile from "../Screen/UserProfile";
+import ChangePassword from "../Screen/ChangePassword";
+import AddNotes from "../Screen/AddNotes";
 
 const router = createBrowserRouter([
     {
@@ -19,7 +20,7 @@ const router = createBrowserRouter([
     },
     {
       path: "/faq",
-      element: <div><Navigation />{<Protected Component={Faq}/>}</div>,
+      element: <div><Navigation />{<Protected Component={Faq} access={true}/>}</div>,
     },
     {
       path: "/login",
@@ -35,7 +36,11 @@ const router = createBrowserRouter([
     },
     {
       path: "/contactUs",
-      element: <div><Navigation />{<Protected Component={ContactUs}/>}</div>,
+      element: <div><Navigation />{<Protected Component={ContactUs} />}</div>,
+    },
+    {
+      path: "/changePassword",
+      element: <div><Navigation />{<Protected Component={ChangePassword} />}</div>,
     },
     {
       path: "/forgotPassword",
@@ -43,7 +48,11 @@ const router = createBrowserRouter([
     },
     {
       path: "/userprofile",
-      element: <div><Navigation /><UserProfile /></div>,
+      element: <div><Navigation />{<Protected Component={UserProfile} />}</div>,
+    },
+    {
+      path: "/addNotes",
+      element: <div><Navigation /><AddNotes /></div>,
     },
   ]);
   export default router
