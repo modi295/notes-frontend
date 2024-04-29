@@ -12,6 +12,9 @@ import Protected from "./protected";
 import UserProfile from "../Screen/UserProfile";
 import ChangePassword from "../Screen/ChangePassword";
 import AddNotes from "../Screen/AddNotes";
+import MYDataTable from "../Screen/MyDataTable";
+import SellNotes from "../Screen/SellNotes";
+import EditNotes from "../Screen/EditNotes";
 
 const router = createBrowserRouter([
     {
@@ -53,6 +56,18 @@ const router = createBrowserRouter([
     {
       path: "/addNotes",
       element: <div><Navigation /><AddNotes /></div>,
+    },
+    {
+      path: "/dt",
+      element: <div><Navigation /><MYDataTable /></div>,
+    },
+    {
+      path: "/sellNotes",
+      element: <div><Navigation /><SellNotes/></div>,
+    },
+    {
+      path: "/editNotes/:id",
+      element: <div><Navigation /><EditNotes/></div>,
     },
   ]);
   export default router

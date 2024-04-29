@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useState} from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
@@ -6,6 +6,8 @@ import api from '../Services/api';
 import Banner from '../Component/banner';
 
 const AddNotes = () => {
+    const [sellForValue, setSellForValue] = useState('');
+    const [statusFlag, setStatusFlag] = useState('');
     const validationSchema = Yup.object().shape({
         noteTitle: Yup.string().required('Note Title is required'),
         category: Yup.string().required('Category is required'),
@@ -18,7 +20,7 @@ const AddNotes = () => {
         courseCode: Yup.string().required('Course Code is required'),
         professorLecturer: Yup.string().required('Professor/Lecturer is required'),
         sellFor: Yup.string().required('Sell For is required'),
-        sellPrice: Yup.number().required('Sell Price is required'),
+        sellPrice: Yup.number().default(0),
         statusFlag: Yup.string(),
         publishFlag: Yup.string(),
         displayPicture: Yup.mixed().required('Display Picture is required'),
@@ -26,7 +28,7 @@ const AddNotes = () => {
         previewUpload: Yup.mixed().required('Preview Upload is required'),
     });
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors } ,getValues } = useForm({
         resolver: yupResolver(validationSchema)
     });
 
@@ -35,6 +37,7 @@ const AddNotes = () => {
             const userEmail = localStorage.getItem('email');
     
             data.email = userEmail;
+            data.statusFlag=statusFlag;
     
             const response = await api.post('/uploadNotes', data);
             console.log('Note added successfully:', response.data);
@@ -42,6 +45,37 @@ const AddNotes = () => {
             console.error('Error adding note:', error);
         }
     };
+    const handleSellForChange = (event) => {
+        setSellForValue(event.target.value);
+    };
+    const handleSave = () => {
+        setStatusFlag('S');
+        handleSubmit(onSubmit)();
+    };
+
+    const handlePublish = async () => {
+        const confirmed = window.confirm("Publishing this note will send note to administrator for review, once administrator review and approve then this note will be published to portal. Press yes to continue.");
+        if (confirmed) {
+            try {
+                const userEmail = localStorage.getItem('email');
+                const data = { ...getValues(), email: userEmail }
+                data.email = userEmail;
+    
+                // Update note status to "P" (Published)
+                data.statusFlag = 'P';
+    
+                // Send data to API
+                const response = await api.post('/uploadNotes', data);
+                console.log('Note added successfully:', response.data);
+    
+                // Close the screen and send back to seller dashboard
+                // Implement your logic here to close the screen and navigate to the seller dashboard
+            } catch (error) {
+                console.error('Error publishing note:', error);
+            }
+        }
+    };
+    
     
 
     return (
@@ -143,8 +177,7 @@ const AddNotes = () => {
 
 <div className="container d-flex justify-content-center">
     <form onSubmit={handleSubmit(onSubmit)} className="col-md-8">
-        <h1 style={{ color: '#734dc4', paddingTop: '15px', fontSize: '24px' }}>Basic Notes Details</h1>
-        
+        <h1 style={{ color: '#734dc4', paddingTop: '15px', fontSize: '24px' }}>Basic Notes Details</h1>  
         <div className="row">
     <div className="col-md-6">
         <div className="form-group">
@@ -187,7 +220,7 @@ const AddNotes = () => {
             {errors.notesDescription && <span className="text-danger">{errors.notesDescription.message}</span>}
         </div>
     </div>
-</div>
+        </div>
 
         <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>Institution Information</h1>
         <div className="row">
@@ -235,19 +268,21 @@ const AddNotes = () => {
         <label>Sell For</label>
         <div>
           <label>
-            <input type="radio" value="paid" {...register('sellFor')} /> Paid
+            <input type="radio" value="paid" {...register('sellFor')}  onChange={handleSellForChange}/> Paid
           </label>
           <label>
-            <input type="radio" value="free" {...register('sellFor')} /> Free
+            <input type="radio" value="free" {...register('sellFor')}  onChange={handleSellForChange} /> Free
           </label>
         </div>
         {errors.sellFor && <span className="text-danger">{errors.sellFor.message}</span>}
       </div>
-                 <div className="form-group">
-                     <label>Sell Price</label>
-                     <input type="number" className="form-control" {...register('sellPrice')} />
-                     {errors.sellPrice && <span className="text-danger">{errors.sellPrice.message}</span>}
-                 </div>
+      {sellForValue === 'paid' && (
+                        <div className="form-group">
+                            <label>Sell Price</label>
+                            <input type="number" className="form-control" {...register('sellPrice')} />
+                            {errors.sellPrice && <span className="text-danger">{errors.sellPrice.message}</span>}
+                        </div>
+                    )}
             </div>
             <div className="col-md-6">
             <div className="form-group">
@@ -259,9 +294,10 @@ const AddNotes = () => {
         </div>
 
         <div className="row">
-            <div className="col-12 pt-2 text-start"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="submit" className=" btn btn-sm">SUBMIT</button>
-            </div>
+            <div className="col-1 pt-2 text-end"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="button" onClick={handleSave} className=" btn btn-sm">SAVE</button></div>
+            <div className="col-11 pt-2 text-start"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="button" onClick={handlePublish} className=" btn btn-sm">Publish</button></div>
         </div>
+            
     </form>
 </div>
 </div>
