@@ -19,6 +19,7 @@
     "bootstrap": "^5.3.3",
     "js-cookie": "^3.0.5",
     "react": "^18.2.0",
+    "react-bootstrap": "^2.10.2",
     "react-data-table-component": "^7.6.2",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.3",

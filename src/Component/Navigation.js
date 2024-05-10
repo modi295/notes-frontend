@@ -82,7 +82,7 @@ function Navigation() {
     </a>
     <nav className="nav nav-pills">
       <Link to="/searchNote" className="nav-link text-black my-2">Search Notes</Link>
-      <a href="/your-actual-url-2" className="nav-link text-black my-2">Sell Your Notes</a>
+      <Link to="/sellNotes" className="nav-link text-black my-2">Sell Your Notes</Link>
       <a href="/your-actual-url-2" className="nav-link text-black my-2">Buyers Request</a>
       <Link to="/faq" className="nav-link text-black my-2">FAQ</Link>
       <Link to="/contactUs" className="nav-link text-black my-2">Contact Us</Link>
@@ -118,7 +118,7 @@ function Navigation() {
           </a>
           <nav className="nav nav-pills">
             <Link to="/searchNote" className="nav-link text-black my-2">Search Notes</Link>
-            <a href="/your-actual-url-2" className="nav-link text-black my-2">Sell Your Notes</a>
+            <Link to="/sellNotes" className="nav-link text-black my-2">Sell Your Notes</Link>
             <Link to="/faq" className="nav-link text-black my-2">FAQ</Link>
             <Link to="/contactUs" className="nav-link text-black my-2">Contact Us</Link>
             <Link to="/login" className="nav-link btn btn-sm" style={linkStyle}>Login</Link>

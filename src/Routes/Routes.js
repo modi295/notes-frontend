@@ -12,9 +12,10 @@ import Protected from "./protected";
 import UserProfile from "../Screen/UserProfile";
 import ChangePassword from "../Screen/ChangePassword";
 import AddNotes from "../Screen/AddNotes";
-import MYDataTable from "../Screen/MyDataTable";
 import SellNotes from "../Screen/SellNotes";
 import EditNotes from "../Screen/EditNotes";
+import ViewNotes from "../Screen/ViewNotes";
+
 
 const router = createBrowserRouter([
     {
@@ -55,19 +56,19 @@ const router = createBrowserRouter([
     },
     {
       path: "/addNotes",
-      element: <div><Navigation /><AddNotes /></div>,
-    },
-    {
-      path: "/dt",
-      element: <div><Navigation /><MYDataTable /></div>,
+      element: <div><Navigation />{<Protected Component={AddNotes} />}</div>,
     },
     {
       path: "/sellNotes",
-      element: <div><Navigation /><SellNotes/></div>,
+      element: <div><Navigation />{<Protected Component={SellNotes} />}</div>,
     },
     {
       path: "/editNotes/:id",
-      element: <div><Navigation /><EditNotes/></div>,
+      element: <div><Navigation />{<Protected Component={EditNotes} />}</div>,
+    },
+    {
+      path: "/viewNotes/:id",
+      element: <div><Navigation />{<Protected Component={ViewNotes} />}</div>,
     },
   ]);
   export default router

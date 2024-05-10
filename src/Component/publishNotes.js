@@ -7,49 +7,57 @@ function PublishNotes() {
     const navigate = useNavigate();
     const columns = [
         {
-            name: "ADDED AT",
+            name: "ADDED DATE",
             selector: (row) => {
                 const createdAt = new Date(row.createdAt);
-                return createdAt.toISOString().split('T')[0]; // Extract date part
+                const day = createdAt.getDate().toString().padStart(2, '0');
+                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
+                const year = createdAt.getFullYear();
+                return `${day}-${month}-${year}`;
             },
             sortable: true,
-            width: '150px'
+            width: '190px'
         },
         {
             name: "TITLE",
             selector: (row) => row.noteTitle,
-            width: '300px'
+            sortable: true,
+            width: '250px'
         },
         {
             name: "CATEGORY",
             selector: (row) => row.category,
-            width: '150px'
+            sortable: true,
+            width: '190px'
         },
         {
-            name: "STATUS",
-            selector: (row) => row.statusFlag,
-            width: '150px'
+            name: "SELL TYPE",
+            selector: (row) => row.sellFor,
+            sortable: true,
+            width: '130px'
         },
         {
-            name: "Action",
+            name: "PRICE",
+            selector: (row) => `$${row.sellPrice}`,
+            sortable: true,
+            width: '130px'
+        },
+        { 
+            name: "ACTION",
             cell: (row) => (
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
                     <img
-                        src="edit.png"
+                        src="eye.png"
                         alt="Edit"
-                        onClick={() => handleEdit(row.id)}
+                        title="View"
+                        onClick={() => handleView(row.id)}
                         style={{ cursor: 'pointer', marginRight: '9px' }}
-                    />
-                    <img
-                        src="delete.png"
-                        alt="Delete"
-                        onClick={() => handleDelete(row.id)}
-                        style={{ cursor: 'pointer' }}
                     />
                 </div>
 
-            )
+            ),
+            width: '120px'
         }
     ];
 
@@ -59,7 +67,9 @@ function PublishNotes() {
 
     const fetchData = async () => {
         try {
-            const req = await fetch("http://localhost:5000/api/allNotes");
+            const email = localStorage.getItem('email');
+            const url = `http://localhost:5000/api/publishNotes/${email}`;
+            const req = await fetch(url);
             const res = await req.json();
             setData(res);
             setFilter(res);
@@ -67,37 +77,28 @@ function PublishNotes() {
             console.error('Error fetching data:', error);
         }
     };
-
+    
+    const handleView = (id) => {
+        navigate(`/viewNotes/${id}`);
+    };
     useEffect(() => {
         fetchData();
     }, []);
 
     useEffect(() => {
-        const result = data.filter((item) => {
-            return item.noteTitle.toLowerCase().includes(search.toLowerCase());
+        const result = data.filter(item => {
+            const titleMatch = item.noteTitle.toLowerCase().includes(search.toLowerCase());
+            const categoryMatch = item.category.toLowerCase().includes(search.toLowerCase());
+            const sellTypeMatch = item.sellFor.toLowerCase().includes(search.toLowerCase());
+            const priceMatch = item.sellPrice.toString().includes(search.toLowerCase()); // Assuming price is a string
+            return titleMatch || categoryMatch || sellTypeMatch || priceMatch;
         });
         setFilter(result);
     }, [data, search]);
 
-    const handleDelete = async (id) => {
-        try {
-            await fetch(`http://localhost:5000/api/deleteNote/${id}`, {
-                method: 'DELETE'
-            });
-            // Filter out the deleted note from the data
-            const updatedData = data.filter(item => item.id !== id);
-            setData(updatedData);
-            setFilter(updatedData);
-        } catch (error) {
-            console.error('Error deleting note:', error);
-        }
-    };
-    const handleEdit = (id) => {
-        navigate(`/editNotes/${id}`);
-    };
-
+   
     return (
-        <div style={{ paddingTop: '100px' }}>
+        <div style={{ paddingTop: '30px' }}>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -114,7 +115,7 @@ function PublishNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '500px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
+                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
                                 <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
                             </div>
                             }

@@ -10,6 +10,10 @@ function EditNotes(){
     const { id } = useParams();
     const [note, setNote] = useState(null);
     const [sellForValue, setSellForValue] = useState('');
+    const [displayPictureP, setDisplayPictureP] = useState();
+    const [previewUploadP, setPreviewUploadP] = useState();
+    const [notesAttachmentP, setNotesAttachmentP] = useState();
+
     const validationSchema = Yup.object().shape({
         noteTitle: Yup.string().required('Note Title is required'),
         category: Yup.string().required('Category is required'),
@@ -25,9 +29,9 @@ function EditNotes(){
         sellPrice: Yup.number().default(0),
         statusFlag: Yup.string(),
         publishFlag: Yup.string(),
-        displayPicture: Yup.mixed().required('Display Picture is required'),
-        notesAttachment: Yup.mixed().required('Notes Attachment is required'),
-        previewUpload: Yup.mixed().required('Preview Upload is required'),
+        displayPictureP: Yup.string(),
+        notesAttachmentP: Yup.string(),
+        previewUploadP: Yup.string()
     });
 
     const { register, handleSubmit, formState: { errors } } = useForm({
@@ -46,21 +50,76 @@ function EditNotes(){
         fetchNote();
     }, [id]); 
 
-    const onSubmit = async (data) => {
-        try {
-            // Get email from local storage
-            const email = localStorage.getItem('email');
-            // Add email to the data being sent to the API
-            const requestData = { ...data, email };
+    // const onSubmit = async (data) => {
+    //     try {
+    //         // Get email from local storage
+    //         const email = localStorage.getItem('email');
+    //         // Add email to the data being sent to the API
+    //         const requestData = { ...data, email };
     
-            const response = await api.put(`/updateNotes/${note.id}`, requestData);
+    //         const response = await api.put(`/updateNotes/${note.id}`, requestData);
+    //         console.log('Note updated successfully:', response.data);
+    //         // Handle redirection or any other actions after successful update
+    //     } catch (error) {
+    //         console.error('Error updating note:', error);
+    //     }
+    // };
+    const onSubmit = async (data, noteId) => {
+        try {
+            const userEmail = localStorage.getItem('email');
+            const formData = new FormData();
+            data.publishFlag = 'N';
+            data.statusFlag = 'S';
+            formData.append('email', userEmail);
+            formData.append('noteTitle', data.noteTitle);
+            formData.append('category', data.category);
+            formData.append('notesType', data.notesType);
+            formData.append('numberOfPages', data.numberOfPages);
+            formData.append('notesDescription', data.notesDescription);
+            formData.append('universityInformation', data.universityInformation);
+            formData.append('country', data.country);
+            formData.append('courseInformation', data.courseInformation);
+            formData.append('courseCode', data.courseCode);
+            formData.append('professorLecturer', data.professorLecturer);
+            formData.append('sellFor', data.sellFor);
+            formData.append('sellPrice', data.sellPrice);
+            formData.append('statusFlag', data.statusFlag);
+            formData.append('publishFlag', data.publishFlag);
+            formData.append('notesAttachmentP', notesAttachmentP);
+            formData.append('previewUploadP', previewUploadP);
+            formData.append('displayPictureP', displayPictureP);
+    
+            console.log(formData);
+            const { noteId } = data;
+            // Send formData to the API endpoint for updating the note
+            const response = await api.put(`/updateNotes/${noteId}`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+    
             console.log('Note updated successfully:', response.data);
-            // Handle redirection or any other actions after successful update
         } catch (error) {
             console.error('Error updating note:', error);
         }
     };
     
+    const handleDisplayPictureChange = (event) => {
+        const file = event.target.files[0];
+        console.log(file);
+        setDisplayPictureP(file);
+    };
+    const handlePreviewUploadChange = (event) => {
+        const file = event.target.files[0];
+        console.log(file);
+        setPreviewUploadP(file);
+    };
+
+    const handleNotesAttachmentChange = (event) => {
+        const file = event.target.files[0];
+        console.log(file);
+        setNotesAttachmentP(file);
+    };
 
     if (!note) {
         return <div>Loading...</div>;
@@ -73,6 +132,7 @@ function EditNotes(){
             <div className="container d-flex justify-content-center">
                 <form onSubmit={handleSubmit(onSubmit)} className="col-md-8">
                     <h1 style={{ color: '#734dc4', paddingTop: '15px', fontSize: '24px' }}>Basic Notes Details</h1>
+                    <input type="hidden" defaultValue={note.id} {...register('noteId')} />
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
@@ -82,7 +142,7 @@ function EditNotes(){
                             </div>
                             <div className="form-group">
                                 <label>Display Picture</label>
-                                <input type="file" className="form-control" {...register('displayPicture')} accept="image/*" />
+                                <input type="file" className="form-control" onChange={handleDisplayPictureChange} accept="image/*" />
                                 {errors.displayPicture && <span className="text-danger">{errors.displayPicture.message}</span>}
                             </div>
                             <div className="form-group">
@@ -99,7 +159,7 @@ function EditNotes(){
                             </div>
                             <div className="form-group">
                                 <label>Notes Attachment</label>
-                                <input type="file" className="form-control" {...register('notesAttachment')} accept=".pdf" />
+                                <input type="file" className="form-control" onChange={handleNotesAttachmentChange} accept=".pdf" />
                                 {errors.notesAttachment && <span className="text-danger">{errors.notesAttachment.message}</span>}
                             </div>
                             <div className="form-group">
@@ -181,7 +241,7 @@ function EditNotes(){
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>Preview Upload</label>
-                                <input type="file" className="form-control" {...register('previewUpload')} accept=".pdf" />
+                                <input type="file" className="form-control" onChange={handlePreviewUploadChange} accept=".pdf" />
                                 {errors.previewUpload && <span className="text-danger">{errors.previewUpload.message}</span>}
                             </div>
                         </div>
