@@ -15,6 +15,10 @@ import AddNotes from "../Screen/AddNotes";
 import SellNotes from "../Screen/SellNotes";
 import EditNotes from "../Screen/EditNotes";
 import ViewNotes from "../Screen/ViewNotes";
+import MyDownload from "../Screen/MyDownload";
+import SoldNotes from "../Screen/SoldNotes";
+import BuyRequest from "../Screen/BuyRequest";
+import AdminDashboard from "../Screen/AdminDashboard";
 
 
 const router = createBrowserRouter([
@@ -68,7 +72,23 @@ const router = createBrowserRouter([
     },
     {
       path: "/viewNotes/:id",
-      element: <div><Navigation />{<Protected Component={ViewNotes} />}</div>,
+      element: <div><Navigation /><ViewNotes /></div>,
     },
+    {
+      path: "/downloadNotes",
+      element: <div><Navigation />{<Protected Component={MyDownload} />}</div>,
+    },
+    {
+      path: "/soldNotes",
+      element: <div><Navigation />{<Protected Component={SoldNotes} />}</div>,
+    },
+    {
+      path: "/BuyRequest",
+      element: <div><Navigation />{<Protected Component={BuyRequest} />}</div>,
+    },
+    {
+      path: "/adminDashboard",
+      element: <div><Navigation />{<Protected Component={AdminDashboard} />}</div>,
+    }
   ]);
   export default router

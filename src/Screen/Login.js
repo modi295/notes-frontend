@@ -26,7 +26,7 @@ function Login() {
             // Cookies.set('email', email);
             console.log("login successfully");
             setLoginSuccess(true); // Set login success state
-            // navigate('/userprofile');
+            navigate('/userprofile');
             window.location.reload(); 
         } catch (error) {
 

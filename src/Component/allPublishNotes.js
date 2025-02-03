@@ -3,26 +3,21 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 
-function PublishNotes() {
+function AllPublishNotes() {
     const navigate = useNavigate();
     const columns = [
         {
-            name: "ADDED DATE",
-            selector: (row) => {
-                const createdAt = new Date(row.createdAt);
-                const day = createdAt.getDate().toString().padStart(2, '0');
-                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
-                const year = createdAt.getFullYear();
-                return `${day}-${month}-${year}`;
-            },
+            name: "TITLE",
+            selector: (row) => (
+                <span
+                    style={{ color: '#734dc4', cursor: 'pointer' }}
+                    onClick={() => handleView(row.id)}
+                >
+                    {row.noteTitle}
+                </span>
+            ),
             sortable: true,
             width: '190px'
-        },
-        {
-            name: "TITLE",
-            selector: (row) => row.noteTitle,
-            sortable: true,
-            width: '250px'
         },
         {
             name: "CATEGORY",
@@ -36,9 +31,34 @@ function PublishNotes() {
             sortable: true,
             width: '130px'
         },
+        
         {
             name: "PRICE",
             selector: (row) => `$${row.sellPrice}`,
+            sortable: true,
+            width: '130px'
+        },
+        {
+            name: "PUBLISHER",
+            selector: (row) => row.userFullName,
+            sortable: true,
+            width: '130px'
+        },
+        {
+            name: "CREATED DATE",
+            selector: (row) => {
+                const createdAt = new Date(row.createdAt);
+                const day = createdAt.getDate().toString().padStart(2, '0');
+                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
+                const year = createdAt.getFullYear();
+                return `${day}-${month}-${year}`;
+            },
+            sortable: true,
+            width: '190px'
+        },
+        {
+            name: "NUMBER OF DOWNLOADS",
+            selector: (row) => row.downloadCount,
             sortable: true,
             width: '130px'
         },
@@ -67,8 +87,7 @@ function PublishNotes() {
 
     const fetchData = async () => {
         try {
-            const email = localStorage.getItem('email');
-            const url = `http://localhost:5000/api/publishNotes/${email}`;
+            const url = `http://localhost:5000/api/allpublishNotes`;
             const req = await fetch(url);
             const res = await req.json();
     
@@ -126,7 +145,7 @@ function PublishNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
+                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>All publish Notes</h1>
                                 <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
                             </div>
                             }
@@ -137,5 +156,4 @@ function PublishNotes() {
         </div>
     );
 }
-
-export default PublishNotes;
+export default AllPublishNotes;

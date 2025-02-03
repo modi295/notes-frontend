@@ -1,11 +1,112 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../Services/api';
+import { isLoggedIn } from '../Services/auth';
+import { useNavigate } from 'react-router-dom';
 
 function ViewNotes() {
     const { id } = useParams();
     const [note, setNote] = useState(null);
 
+    const navigate = useNavigate();
+  
+    const postBuyerNote = async (note) => {
+        try {
+            const email = localStorage.getItem('email'); 
+            const data = {
+                email,
+                noteId: note.id,
+                noteTitle: note.noteTitle,
+                category: note.category,
+                sellFor: note.sellFor,
+                sellPrice: note.sellPrice,
+                purchaseEmail: note.email,
+                buyerEmail: email
+            };
+            
+            console.log("Buyer Note Data: ", data); // Log the data being sent
+    
+            const response = await api.post('/buyernotes', data);
+    
+            if (response.data.success) {
+                alert('Please complete the payment to access the notes. Once the payment is successful, the notes will be available for download in your account.');
+                // Proceed to download or other actions
+            } else {
+                alert('There was an error with your purchase. Please try again.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while processing your request.');
+        }
+    };
+    
+    const postDownloadNote = async (note) => {
+        try {
+            const email = localStorage.getItem('email'); 
+            
+            const data = {
+                email,
+                noteId: note.id,
+                noteTitle: note.noteTitle,
+                category: note.category,
+                sellFor: note.sellFor,
+                sellPrice: note.sellPrice,
+                purchaseEmail:note.email,
+                buyerEmail: email
+            };
+            
+            if (note.sellPrice > 0) {
+                data.PurchaseTypeFlag = 'U';
+            }
+    
+            console.log("Download Note Data: ", data); // Log the data being sent
+    
+            await api.post('/downloadnotes', data);
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while processing your request.');
+        }
+    };
+    
+    const postSoldNote = async (note) => {
+        try {
+            const email = localStorage.getItem('email'); 
+            const data = {
+                email,
+                noteId: note.id,
+                noteTitle: note.noteTitle,
+                category: note.category,
+                sellFor: note.sellFor,
+                sellPrice: note.sellPrice,
+                purchaseEmail:note.email,
+                buyerEmail: email
+            };
+            
+            console.log("Sold Note Data: ", data); // Log the data being sent
+    
+            await api.post('/soldnotes', data);
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred while processing your request.');
+        }
+    };
+    
+    const handleDownloadClick = () => {
+        if (!isLoggedIn()) {
+            navigate('/login');
+        } else {
+            if (note.sellFor === 'free') {
+                postDownloadNote(note);
+                postSoldNote(note);
+                window.location.href = note.notesAttachmentP;
+            } else {
+                const userConfirmed = window.confirm('This note is paid. Do you want to proceed with the purchase?');
+                if (userConfirmed) {
+                    postBuyerNote(note);
+                }
+            }
+        }
+    };
 
     useEffect(() => {
         const fetchNote = async () => {
@@ -37,7 +138,7 @@ function ViewNotes() {
                         <h1 style={{ color: '#734dc4', fontSize: '40px' }} >{note.noteTitle}</h1>
                         <h4 style={{ color: '#734dc4', fontSize: '18px' }}>{note.category}</h4>
                         <p><strong>Description:</strong>{note.notesDescription}</p>
-                        <button className="btn btn-sm" style={{ backgroundColor: '#734dc4', color: 'white' }}>DOWNLOAD/${note.sellPrice}</button>
+                        <button className="btn btn-sm"  onClick={handleDownloadClick} style={{ backgroundColor: '#734dc4', color: 'white' }}>DOWNLOAD/${note.sellPrice}</button>
                     </div>
                     <div className="col-md-2" style={{ paddingLeft: 60 }}>
                         <p>Institution</p>

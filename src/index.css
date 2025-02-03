@@ -87,3 +87,30 @@ code {
 .border-line {
   border-top: 1px solid #ddd;
 }
+
+.product-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-left: 150px;
+  margin-right: 150px;
+  margin-top: 20px;
+}
+
+.product-card {
+  width: 32%; /* Adjust width based on your design */
+  margin-bottom: 20px;
+  border: 1px solid #ddd; /* Add border style and color */
+  padding: 10px; /* Add padding for spacing */
+}
+.pagination-container {
+  display: flex; /* Use flexbox for centering */
+  justify-content: center;
+  margin-top: 20px; /* Add some margin for spacing */
+}
+
+.product-info {
+  text-align: left; /* Align text to the left */
+  padding-left: 10px;
+}
+

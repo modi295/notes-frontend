@@ -72,13 +72,23 @@ function InProgressNotes() {
             const url = `http://localhost:5000/api/saveNotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
-            setData(res);
-            setFilter(res);
+    
+            if (Array.isArray(res)) {
+                setData(res);
+                setFilter(res);
+            } else {
+                // Handle cases where the response contains a message or is not an array
+                setData([]);
+                setFilter([]);
+                console.warn('No data available:', res.message || 'Unexpected response format');
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
+            setData([]);
+            setFilter([]);
         }
     };
-
+    
     useEffect(() => {
         fetchData();
     }, []);

@@ -4,10 +4,12 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import api from '../Services/api';
 import Banner from '../Component/banner';
+import { useNavigate } from 'react-router-dom';
+
 
 const AddNotes = () => {
+    const navigate = useNavigate();
     const [sellForValue, setSellForValue] = useState('');
-    const [statusFlag, setStatusFlag] = useState('');
     const [displayPictureP, setDisplayPictureP] = useState();
     const [previewUploadP, setPreviewUploadP] = useState();
     const [notesAttachmentP, setNotesAttachmentP] = useState();
@@ -34,7 +36,6 @@ const AddNotes = () => {
     const { register, handleSubmit, formState: { errors }} = useForm({
         resolver: yupResolver(validationSchema)
     });
-    // const { register, handleSubmit, formState: { errors } ,getValues } = useForm();
     const onSubmit = async (data) => {
         try {
             const userEmail = localStorage.getItem('email');
@@ -54,7 +55,7 @@ const AddNotes = () => {
             formData.append('professorLecturer', data.professorLecturer);
             formData.append('sellFor', data.sellFor);
             formData.append('sellPrice', data.sellPrice);
-            formData.append('statusFlag', statusFlag);
+            formData.append('statusFlag', data.statusFlag);
             formData.append('publishFlag', data.publishFlag);
             formData.append('notesAttachmentP', notesAttachmentP);
             formData.append('previewUploadP', previewUploadP);
@@ -92,20 +93,27 @@ const AddNotes = () => {
     const handleSellForChange = (event) => {
         setSellForValue(event.target.value);
     };
+
     const handleSave = () => {
         console.log("Check");
-        setStatusFlag('S');
-        handleSubmit(onSubmit)();
+        handleSubmit((data) => {
+            data.statusFlag = 'S'; // Set the status flag directly in the form data
+            onSubmit(data);       // Pass the updated data to onSubmit
+        })();
+        navigate(`/sellNotes`);
     };
+    
     const handlePublish = () => {
         console.log("Check");
-        const confirmed = window.confirm("Publishing this note will send note to administrator for review, once administrator review and approve then this note will be published to portal. Press yes to continue.");
+        const confirmed = window.confirm("Publishing this note will send the note to the administrator for review. Once reviewed and approved, it will be published to the portal. Press Yes to continue.");
         if (confirmed) {
-            setStatusFlag('P');
-            handleSubmit(onSubmit)();
+            handleSubmit((data) => {
+                data.statusFlag = 'P'; // Set the status flag for publish
+                onSubmit(data);       // Pass the updated data to onSubmit
+            })();
         }
     };
-
+    
     return (
 
         <div>
@@ -117,42 +125,42 @@ const AddNotes = () => {
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Note Title</label>
+                                <label>Note Title<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('noteTitle')} />
                                 {errors.noteTitle && <span className="text-danger">{errors.noteTitle.message}</span>}
                             </div>
                             {/* onChange={handleDisplayPictureChange} */}
                             <div className="form-group">
-                                <label>Display Picture</label>
+                                <label>Display Picture<span className="required">*</span></label>
                                 <input type="file" className="form-control" onChange={handleDisplayPictureChange} accept="image/*" />
                                 {errors.displayPictureP && <span className="text-danger">{errors.displayPictureP.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Notes Type</label>
+                                <label>Notes Type<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('notesType')} />
                                 {errors.notesType && <span className="text-danger">{errors.notesType.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Category</label>
+                                <label>Category<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('category')} />
                                 {errors.category && <span className="text-danger">{errors.category.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Notes Attachment</label>
+                                <label>Notes Attachment<span className="required">*</span></label>
                                 <input type="file" className="form-control" onChange={handleNotesAttachmentChange} accept=".pdf" />
                                 {errors.notesAttachmentP && <span className="text-danger">{errors.notesAttachmentP.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Number of Pages</label>
+                                <label>Number of Pages<span className="required">*</span></label>
                                 <input type="number" className="form-control" {...register('numberOfPages')} />
                                 {errors.numberOfPages && <span className="text-danger">{errors.numberOfPages.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-12">
                             <div className="form-group">
-                                <label>Notes Description</label>
+                                <label>Notes Description<span className="required">*</span></label>
                                 <textarea className="form-control" {...register('notesDescription')} />
                                 {errors.notesDescription && <span className="text-danger">{errors.notesDescription.message}</span>}
                             </div>
@@ -163,14 +171,14 @@ const AddNotes = () => {
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Country</label>
+                                <label>Country<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('country')} />
                                 {errors.country && <span className="text-danger">{errors.country.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>University Information</label>
+                                <label>University Information<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('universityInformation')} />
                                 {errors.universityInformation && <span className="text-danger">{errors.universityInformation.message}</span>}
                             </div>
@@ -180,19 +188,19 @@ const AddNotes = () => {
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Course Information</label>
+                                <label>Course Information<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('courseInformation')} />
                                 {errors.courseInformation && <span className="text-danger">{errors.courseInformation.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Professor/Lecturer</label>
+                                <label>Professor/Lecturer<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('professorLecturer')} />
                                 {errors.professorLecturer && <span className="text-danger">{errors.professorLecturer.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Course Code</label>
+                                <label>Course Code<span className="required">*</span></label>
                                 <input type="text" className="form-control" {...register('courseCode')} />
                                 {errors.courseCode && <span className="text-danger">{errors.courseCode.message}</span>}
                             </div>
@@ -202,7 +210,7 @@ const AddNotes = () => {
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Sell For</label>
+                                <label>Sell For<span className="required">*</span></label>
                                 <div>
                                     <label>
                                         <input type="radio" value="paid" {...register('sellFor')} onChange={handleSellForChange} /> Paid
@@ -215,7 +223,7 @@ const AddNotes = () => {
                             </div>
                             {sellForValue === 'paid' && (
                                 <div className="form-group">
-                                    <label>Sell Price</label>
+                                    <label>Sell Price<span className="required">*</span></label>
                                     <input type="number" className="form-control" {...register('sellPrice')} />
                                     {errors.sellPrice && <span className="text-danger">{errors.sellPrice.message}</span>}
                                 </div>
@@ -223,7 +231,7 @@ const AddNotes = () => {
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Preview Upload</label>
+                                <label>Preview Upload<span className="required">*</span></label>
                                 <input type="file" className="form-control" onChange={handlePreviewUploadChange} accept=".pdf" />
                                 {errors.previewUploadP && <span className="text-danger">{errors.previewUploadP.message}</span>}
                             </div>

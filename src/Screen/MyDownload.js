@@ -3,32 +3,39 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 
-function PublishNotes() {
+function MyDownload() {
     const navigate = useNavigate();
     const columns = [
         {
-            name: "ADDED DATE",
-            selector: (row) => {
-                const createdAt = new Date(row.createdAt);
-                const day = createdAt.getDate().toString().padStart(2, '0');
-                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
-                const year = createdAt.getFullYear();
-                return `${day}-${month}-${year}`;
-            },
-            sortable: true,
-            width: '190px'
+            name: "SR NO.",
+            selector: (row, index) => index + 1,
+            sortable: false,
+            width: '100px'
         },
         {
-            name: "TITLE",
-            selector: (row) => row.noteTitle,
+            name: "NOTE TITLE",
+            cell: (row) => (
+                <span
+                    style={{ color: '#734dc4', cursor: 'pointer' }}
+                    onClick={() => handleView(row.noteId)}
+                >
+                    {row.noteTitle}
+                </span>
+            ),
             sortable: true,
-            width: '250px'
+            width: '200px'
         },
         {
             name: "CATEGORY",
             selector: (row) => row.category,
             sortable: true,
             width: '190px'
+        },
+        {
+            name: "Buyer",
+            selector: (row) => row.email,
+            sortable: true,
+            width: '200px'
         },
         {
             name: "SELL TYPE",
@@ -42,6 +49,18 @@ function PublishNotes() {
             sortable: true,
             width: '130px'
         },
+        {
+            name: "ADDED DATE",
+            selector: (row) => {
+                const createdAt = new Date(row.createdAt);
+                const day = createdAt.getDate().toString().padStart(2, '0');
+                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
+                const year = createdAt.getFullYear();
+                return `${day}-${month}-${year}`;
+            },
+            sortable: true,
+            width: '190px'
+        },
         { 
             name: "ACTION",
             cell: (row) => (
@@ -51,7 +70,7 @@ function PublishNotes() {
                         src="eye.png"
                         alt="Edit"
                         title="View"
-                        onClick={() => handleView(row.id)}
+                        onClick={() => handleView(row.noteId)}
                         style={{ cursor: 'pointer', marginRight: '9px' }}
                     />
                 </div>
@@ -64,22 +83,21 @@ function PublishNotes() {
     const [data, setData] = useState([]);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState([]);
-
+    
     const fetchData = async () => {
         try {
             const email = localStorage.getItem('email');
-            const url = `http://localhost:5000/api/publishNotes/${email}`;
+            const url = `http://localhost:5000/api/downloadnotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
     
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                // Handle cases where the response contains a message or is not an array
+            if (res.message) {
+                // If the response contains a message (no data found)
                 setData([]);
                 setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
+            } else {
+                setData(res);
+                setFilter(res);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -109,7 +127,7 @@ function PublishNotes() {
 
    
     return (
-        <div style={{ paddingTop: '30px' }}>
+        <div style={{ paddingTop: '100px' }}>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -126,8 +144,8 @@ function PublishNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
-                                <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
+                                <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>My Downloads</h1>
+                                <input type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
                             </div>
                             }
                         />
@@ -138,4 +156,4 @@ function PublishNotes() {
     );
 }
 
-export default PublishNotes;
+export default MyDownload;
