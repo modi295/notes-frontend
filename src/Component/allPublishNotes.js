@@ -5,7 +5,16 @@ import { useNavigate } from 'react-router-dom';
 
 function AllPublishNotes() {
     const navigate = useNavigate();
+    const [selectedPublisher, setSelectedPublisher] = useState('');
+    const [distinctPublishers, setDistinctPublishers] = useState([]);
+
     const columns = [
+        {
+            name: "S.NO",
+            selector: (row, index) => index + 1,
+            width: '80px',
+            center: true
+        },
         {
             name: "TITLE",
             selector: (row) => (
@@ -31,7 +40,7 @@ function AllPublishNotes() {
             sortable: true,
             width: '130px'
         },
-        
+
         {
             name: "PRICE",
             selector: (row) => `$${row.sellPrice}`,
@@ -62,7 +71,7 @@ function AllPublishNotes() {
             sortable: true,
             width: '130px'
         },
-        { 
+        {
             name: "ACTION",
             cell: (row) => (
 
@@ -78,7 +87,25 @@ function AllPublishNotes() {
 
             ),
             width: '120px'
+        },
+        {
+            name: "ACTION",
+            cell: (row) => (
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
+                    <img
+                        src="eye.png"
+                        alt="Edit"
+                        title="View"
+                        onClick={() => handleView2(row.id)}
+                        style={{ cursor: 'pointer', marginRight: '9px' }}
+                    />
+                </div>
+
+            ),
+            width: '120px'
         }
+
     ];
 
     const [data, setData] = useState([]);
@@ -90,10 +117,12 @@ function AllPublishNotes() {
             const url = `http://localhost:5000/api/allpublishNotes`;
             const req = await fetch(url);
             const res = await req.json();
-    
+
             if (Array.isArray(res)) {
                 setData(res);
                 setFilter(res);
+                const publishers = [...new Set(res.map(item => item.userFullName))];
+                setDistinctPublishers(publishers);
             } else {
                 // Handle cases where the response contains a message or is not an array
                 setData([]);
@@ -106,10 +135,13 @@ function AllPublishNotes() {
             setFilter([]);
         }
     };
-    
-    
+
+
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
+    };
+    const handleView2 = (id) => {
+        navigate(`/downloadNotes/${id}`);
     };
     useEffect(() => {
         fetchData();
@@ -120,15 +152,18 @@ function AllPublishNotes() {
             const titleMatch = item.noteTitle.toLowerCase().includes(search.toLowerCase());
             const categoryMatch = item.category.toLowerCase().includes(search.toLowerCase());
             const sellTypeMatch = item.sellFor.toLowerCase().includes(search.toLowerCase());
-            const priceMatch = item.sellPrice.toString().includes(search.toLowerCase()); // Assuming price is a string
-            return titleMatch || categoryMatch || sellTypeMatch || priceMatch;
+            const priceMatch = item.sellPrice.toString().includes(search.toLowerCase());
+            const publisherMatch = selectedPublisher ? item.userFullName === selectedPublisher : true;
+
+            return (titleMatch || categoryMatch || sellTypeMatch || priceMatch) && publisherMatch;
         });
         setFilter(result);
-    }, [data, search]);
+    }, [data, search, selectedPublisher]);
 
-   
+
+
     return (
-        <div style={{ paddingTop: '30px' }}>
+        <div style={{ paddingTop: '10px' }}>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -144,10 +179,33 @@ function AllPublishNotes() {
                             highlightOnHover
                             subHeader
                             subHeaderComponent={
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>All publish Notes</h1>
-                                <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
-                            </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', width: '100%' }}>
+                                    <div className="input-group" style={{ width: '200px' }}>
+                                        <select
+                                            className='form-control'
+                                            value={selectedPublisher}
+                                            onChange={(e) => setSelectedPublisher(e.target.value)}
+                                            style={{
+                                                cursor: 'pointer',
+                                                backgroundSize: '10px',
+                                            }}
+                                        >
+                                            <option value=''>Sellers</option>
+                                            {distinctPublishers.map((publisher, index) => (
+                                                <option key={index} value={publisher}>{publisher}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <input
+                                        type='text'
+                                        className='form-control'
+                                        style={{ width: '200px' }}
+                                        placeholder='Search...'
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                </div>
                             }
                         />
                     </div>

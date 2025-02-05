@@ -19,6 +19,7 @@ import MyDownload from "../Screen/MyDownload";
 import SoldNotes from "../Screen/SoldNotes";
 import BuyRequest from "../Screen/BuyRequest";
 import AdminDashboard from "../Screen/AdminDashboard";
+import DownloadNotes from "../Screen/DownloadNotes";
 
 
 const router = createBrowserRouter([
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
     {
       path: "/adminDashboard",
       element: <div><Navigation />{<Protected Component={AdminDashboard} />}</div>,
+    },
+    {
+      path: "/downloadNotes/:id",
+      element: <div><Navigation />{<Protected Component={DownloadNotes} />}</div>,
     }
   ]);
   export default router
