@@ -20,6 +20,10 @@ import SoldNotes from "../Screen/SoldNotes";
 import BuyRequest from "../Screen/BuyRequest";
 import AdminDashboard from "../Screen/AdminDashboard";
 import DownloadNotes from "../Screen/DownloadNotes";
+import UnderReview from "../Screen/UnderReview";
+import RejectedNotes from "../Screen/RejectedNotes";
+import AllPublishNotes from "../Component/allPublishNotes";
+
 
 
 const router = createBrowserRouter([
@@ -94,6 +98,23 @@ const router = createBrowserRouter([
     {
       path: "/downloadNotes/:id",
       element: <div><Navigation />{<Protected Component={DownloadNotes} />}</div>,
+    },
+    {
+      path: "/alldownloadNotes",
+      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px',color: '#734dc4', fontSize: '30px' }}>Downloaded Notes</h1>{<Protected Component={DownloadNotes} />}</div>,
+    },
+    {
+      path: "/underReview",
+      element: <div><Navigation />{<Protected Component={UnderReview} />}</div>,
+    },
+    {
+      path: "/publishNotes",
+      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px',color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>{<Protected Component={AllPublishNotes} />}</div>,
+    },
+    {
+      path: "/rejectedNotes",
+      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '245px',color: '#734dc4', fontSize: '30px' }}>Rejected Notes</h1>{<Protected Component={RejectedNotes} />}</div>,
     }
+  
   ]);
   export default router

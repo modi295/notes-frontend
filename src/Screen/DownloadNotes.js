@@ -55,7 +55,10 @@ function DownloadNotes() {
 
     const fetchData = async () => {
         try {
-            const url = `http://localhost:5000/api/downloadnotesbyId/${id}`;
+
+            const url = id && id !== "null" && id !== "undefined"
+            ? `http://localhost:5000/api/downloadnotesbyId/${id}` 
+            : `http://localhost:5000/api/downloadnotes`;
             const req = await fetch(url);
             const res = await req.json();
 
@@ -103,7 +106,7 @@ function DownloadNotes() {
     const distinctNoteTitles = [...new Set(data.map(item => item.noteTitle))];
 
     return (
-        <div style={{ paddingTop: '70px' }}>
+        <div style={{ paddingTop: '10px' }}>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>

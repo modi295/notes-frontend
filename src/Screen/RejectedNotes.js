@@ -4,7 +4,7 @@ import '../css/grid.css'
 import '../css/allPublishNotes.css';
 import { useNavigate } from 'react-router-dom';
 
-function AllPublishNotes() {
+function RejectedNotes() {
     const navigate = useNavigate();
     const [selectedPublisher, setSelectedPublisher] = useState('');
     const [distinctPublishers, setDistinctPublishers] = useState([]);
@@ -42,28 +42,15 @@ function AllPublishNotes() {
             width: '190px'
         },
         {
-            name: "SELL TYPE",
-            selector: (row) => row.sellFor,
-            sortable: true,
-            width: '130px'
-        },
-
-        {
-            name: "PRICE",
-            selector: (row) => `$${row.sellPrice}`,
-            sortable: true,
-            width: '130px'
-        },
-        {
             name: "PUBLISHER",
             selector: (row) => row.userFullName,
             sortable: true,
             width: '130px'
         },
         {
-            name: "CREATED DATE",
+            name: "DATE Edited",
             selector: (row) => {
-                const createdAt = new Date(row.createdAt);
+                const createdAt = new Date(row.updatedAt);
                 const day = createdAt.getDate().toString().padStart(2, '0');
                 const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
                 const year = createdAt.getFullYear();
@@ -73,15 +60,8 @@ function AllPublishNotes() {
             width: '190px'
         },
         {
-            name: "NUMBER OF DOWNLOADS",
-            selector: (row) => (
-                <span
-                    style={{ color: '#734dc4', cursor: 'pointer' }}
-                    onClick={() => handleView2(row.id)}
-                >
-                    {row.downloadCount}
-                </span>
-            ),
+            name: "Remark",
+            selector: (row) => row.remark,
             sortable: true,
             width: '130px'
         },
@@ -125,7 +105,7 @@ function AllPublishNotes() {
                                     style={{ padding: '10px', cursor: 'pointer' }}
                                     onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}
                                 >
-                                    Unpublish
+                                    Approve
                                 </li>
                             </ul>
                         </div>
@@ -143,7 +123,7 @@ function AllPublishNotes() {
 
     const fetchData = async () => {
         try {
-            const url = `http://localhost:5000/api/allpublishNotes`;
+            const url = `http://localhost:5000/api/rejectedNotes`;
             const req = await fetch(url);
             const res = await req.json();
 
@@ -197,7 +177,7 @@ function AllPublishNotes() {
 
     const updateStatus = async () => {
         if (!remark.trim()) {
-            alert("Please enter a remark before rejecting.");
+            alert("Please enter a remark before Approve.");
             return;
         }
 
@@ -208,7 +188,7 @@ function AllPublishNotes() {
             const noteData = await noteResponse.json();
             const updatedNoteData = {
                 ...noteData,
-                publishFlag: 'U',
+                publishFlag: 'P',
                 remark: remark.trim()
             };
 
@@ -220,9 +200,9 @@ function AllPublishNotes() {
 
             if (updateResponse.ok) {
                 setData(prevData => prevData.map(note =>
-                    note.id === unpublishId ? { ...note, publishFlag: 'U', remark: remark.trim() } : note
+                    note.id === unpublishId ? { ...note, publishFlag: 'P', remark: remark.trim() } : note
                 ));
-                alert(`Note rejected successfully.`);
+                alert(`Note Approve successfully.`);
                 closeUnpublishModal();
             } else {
                 alert(`Failed to update status`);
@@ -314,7 +294,7 @@ function AllPublishNotes() {
                             onChange={(e) => setRemark(e.target.value)}
                         />
                         <div className="modal-footer">
-                            <button onClick={updateStatus} className="btn btn-danger">Unpublish</button>
+                            <button onClick={updateStatus} className="btn btn-success">Approve</button>
                             <button onClick={closeUnpublishModal} className="btn btn-secondary">Cancel</button>
                         </div>
                     </div>
@@ -323,4 +303,4 @@ function AllPublishNotes() {
         </div>
     );
 }
-export default AllPublishNotes;
+export default RejectedNotes;

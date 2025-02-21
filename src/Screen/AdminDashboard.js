@@ -7,7 +7,7 @@ function AdminDashboard() {
 <div>
 
      <Dashboard/>
-     <h1 style={{ marginLeft: '70px', marginBottom: '0', marginTop:'30px',color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>
+     <h1 style={{ marginLeft: '115px', marginBottom: '0', marginTop:'30px',color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>
      <AllPublishNotes/>
     </div>
   )

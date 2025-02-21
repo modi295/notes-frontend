@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
-import '../css/allPublishNotes.css';
 import { useNavigate } from 'react-router-dom';
 
-function AllPublishNotes() {
+function UnderReview() {
     const navigate = useNavigate();
     const [selectedPublisher, setSelectedPublisher] = useState('');
     const [distinctPublishers, setDistinctPublishers] = useState([]);
@@ -13,7 +12,6 @@ function AllPublishNotes() {
     const [unpublishId, setUnpublishId] = useState(null);
     const [remark, setRemark] = useState('');
     const [selectedNote, setSelectedNote] = useState({ title: '', category: '' });
-
 
     const columns = [
         {
@@ -39,23 +37,10 @@ function AllPublishNotes() {
             name: "CATEGORY",
             selector: (row) => row.category,
             sortable: true,
-            width: '190px'
-        },
-        {
-            name: "SELL TYPE",
-            selector: (row) => row.sellFor,
-            sortable: true,
-            width: '130px'
-        },
-
-        {
-            name: "PRICE",
-            selector: (row) => `$${row.sellPrice}`,
-            sortable: true,
             width: '130px'
         },
         {
-            name: "PUBLISHER",
+            name: "SELLER",
             selector: (row) => row.userFullName,
             sortable: true,
             width: '130px'
@@ -73,28 +58,49 @@ function AllPublishNotes() {
             width: '190px'
         },
         {
-            name: "NUMBER OF DOWNLOADS",
-            selector: (row) => (
-                <span
-                    style={{ color: '#734dc4', cursor: 'pointer' }}
-                    onClick={() => handleView2(row.id)}
-                >
-                    {row.downloadCount}
-                </span>
-            ),
+            name: "STATUS",
+            selector: (row) => {
+                switch (row.publishFlag) {
+                    case 'N':
+                        return "Submitted for Review";
+                    case 'I':
+                        return "In Review";
+                    case 'P':
+                        return "Approved";
+                    case 'R':
+                        return "Rejected";
+                    case 'U':
+                        return "Unpublish";
+                    default:
+                        return "Unknown";
+                }
+            },
             sortable: true,
-            width: '130px'
+            width: '210px'
         },
         {
             name: "ACTION",
             cell: (row) => (
-                <div 
+                <div style={{ display: 'flex', gap: '5px' }}>
+                    <button style={{ backgroundColor: 'green', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }} onClick={() => updateStatus(row.id, 'P')}>Approve</button>
+                    <button style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }}  onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}>Reject</button>
+                    <button style={{ backgroundColor: 'gray', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }} onClick={() => updateStatus(row.id, 'I')}>In Review</button>
+                </div>
+            ),
+            width: '250px'
+        },
+        {
+            name: "",
+            cell: (row) => (
+                <div
                     style={{ position: 'relative', cursor: 'pointer' }}
                     onMouseEnter={() => setActiveDropdown(row.id)}
                     onMouseLeave={() => setActiveDropdown(null)}
                 >
                     <img
                         src="dots.png"
+                        alt="More"
+                        title="More Actions"
                         style={{ cursor: 'pointer' }}
                     />
                     {activeDropdown === row.id && (
@@ -109,32 +115,25 @@ function AllPublishNotes() {
                             zIndex: 10
                         }}>
                             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleDownload(row.notesAttachmentP)}
                                 >
                                     Download Notes
                                 </li>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleView(row.id)}
                                 >
                                     View Details
-                                </li>
-                                <li 
-                                    style={{ padding: '10px', cursor: 'pointer' }}
-                                    onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}
-                                >
-                                    Unpublish
                                 </li>
                             </ul>
                         </div>
                     )}
                 </div>
             ),
-            width: '120px'
+            width: '30px'
         }
-
     ];
 
     const [data, setData] = useState([]);
@@ -143,7 +142,7 @@ function AllPublishNotes() {
 
     const fetchData = async () => {
         try {
-            const url = `http://localhost:5000/api/allpublishNotes`;
+            const url = `http://localhost:5000/api/underReviewNotes`;
             const req = await fetch(url);
             const res = await req.json();
 
@@ -177,11 +176,62 @@ function AllPublishNotes() {
             return;
         }
         const link = document.createElement("a");
-        link.href = filePath; 
+        link.href = filePath;
         link.setAttribute("download", "");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+    const updateStatus = async (id, status) => {
+        const getStatusMessage = (status) => {
+            switch (status) {
+                case 'N':
+                    return "Submitted for Review";
+                case 'I':
+                    return "In Review";
+                case 'P':
+                    return "Approved";
+                case 'R':
+                    return "Rejected";
+                case 'U':
+                    return "Unpublish";
+                default:
+                    return "Unknown";
+            }
+        };
+        const confirmChange = window.confirm(`Are you sure you want to change the status to ${getStatusMessage(status)}?`);
+        if (!confirmChange) return;
+
+        try {
+            const noteResponse = await fetch(`http://localhost:5000/api/notesById/${id}`);
+            if (!noteResponse.ok) {
+                throw new Error('Failed to fetch the note data');
+            }
+
+            const noteData = await noteResponse.json();
+            const updatedNoteData = {
+                ...noteData, 
+                publishFlag: status 
+            };
+
+            const updateResponse = await fetch(`http://localhost:5000/api/updateNotes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedNoteData) // Sending all data with updated publishFlag
+            });
+
+            if (updateResponse.ok) {
+                setData(prevData => prevData.map(note =>
+                    note.id === id ? { ...note, publishFlag: status } : note
+                ));
+                alert(`Status updated to ${status}`);
+            } else {
+                alert(`Failed to update status`);
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Error updating status.');
+        }
     };
     const openUnpublishModal = (id, title, category) => {
         setUnpublishId(id);
@@ -194,8 +244,7 @@ function AllPublishNotes() {
         setRemark('');
         setUnpublishId(null);
     };
-
-    const updateStatus = async () => {
+    const updateStatusR = async () => {
         if (!remark.trim()) {
             alert("Please enter a remark before rejecting.");
             return;
@@ -208,7 +257,7 @@ function AllPublishNotes() {
             const noteData = await noteResponse.json();
             const updatedNoteData = {
                 ...noteData,
-                publishFlag: 'U',
+                publishFlag: 'R',
                 remark: remark.trim()
             };
 
@@ -232,7 +281,7 @@ function AllPublishNotes() {
             alert('Error updating status.');
         }
     };
-  
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -253,7 +302,8 @@ function AllPublishNotes() {
 
 
     return (
-        <div style={{ paddingTop: '10px' }}>
+        <div style={{ paddingTop: '100px' }}>
+            <h1 style={{ marginLeft: '161px', marginBottom: '0', marginBottom:'10px',color: '#734dc4', fontSize: '30px' }}>Notes Under Review</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -314,7 +364,7 @@ function AllPublishNotes() {
                             onChange={(e) => setRemark(e.target.value)}
                         />
                         <div className="modal-footer">
-                            <button onClick={updateStatus} className="btn btn-danger">Unpublish</button>
+                            <button onClick={updateStatusR} className="btn btn-danger">Reject</button>
                             <button onClick={closeUnpublishModal} className="btn btn-secondary">Cancel</button>
                         </div>
                     </div>
@@ -323,4 +373,4 @@ function AllPublishNotes() {
         </div>
     );
 }
-export default AllPublishNotes;
+export default UnderReview;

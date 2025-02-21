@@ -97,10 +97,10 @@ function Navigation() {
                     Notes
                   </button>
                   <ul className="dropdown-menu" aria-labelledby="notesDropdown">
-                    <li><Link to="/adminDashboard" className="dropdown-item">Notes Under Review</Link></li>
-                    <li><Link to="/adminNotes" className="dropdown-item">Published Notes</Link></li>
-                    <li><Link to="/adminMembers" className="dropdown-item">Downloaded Notes</Link></li>
-                    <li><Link to="/adminReports" className="dropdown-item">Rejected Notes</Link></li>
+                    <li><Link to="/underReview" className="dropdown-item">Notes Under Review</Link></li>
+                    <li><Link to="/publishNotes" className="dropdown-item">Published Notes</Link></li>
+                    <li><Link to="/alldownloadNotes" className="dropdown-item">Downloaded Notes</Link></li>
+                    <li><Link to="/rejectedNotes" className="dropdown-item">Rejected Notes</Link></li>
                   </ul>
                 </div>
                 <Link to="/adminDashboard" className="nav-link text-black my-2">Member</Link>
