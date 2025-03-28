@@ -5,8 +5,8 @@ import NotesGrid from '../Component/NotesGrid';
 function searchNote() {
   return (
     <div>
-    <Banner text="Search Notes" imageHeight="250px" />
-    <NotesGrid/>
+      <Banner text="Search Notes" imageHeight="250px" />
+      <NotesGrid />
     </div>
   )
 }

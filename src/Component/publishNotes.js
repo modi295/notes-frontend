@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
+import { getUserEmail } from '../Services/auth';
 
 function PublishNotes() {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ function PublishNotes() {
             sortable: true,
             width: '130px'
         },
-        { 
+        {
             name: "ACTION",
             cell: (row) => (
 
@@ -67,11 +68,11 @@ function PublishNotes() {
 
     const fetchData = async () => {
         try {
-            const email = localStorage.getItem('email');
+            const email = getUserEmail();
             const url = `http://localhost:5000/api/publishNotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
-    
+
             if (Array.isArray(res)) {
                 setData(res);
                 setFilter(res);
@@ -87,8 +88,8 @@ function PublishNotes() {
             setFilter([]);
         }
     };
-    
-    
+
+
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
     };
@@ -107,7 +108,7 @@ function PublishNotes() {
         setFilter(result);
     }, [data, search]);
 
-   
+
     return (
         <div style={{ paddingTop: '30px' }}>
             <div className='container d-flex justify-content-center'>
@@ -126,9 +127,9 @@ function PublishNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
-                                <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
-                            </div>
+                                    <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
+                                    <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
+                                </div>
                             }
                         />
                     </div>

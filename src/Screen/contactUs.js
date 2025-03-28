@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import Banner from '../Component/banner';
 import api from '../Services/api';
 import '../css/Login.css'
+import { getUserEmail } from '../Services/auth';
 
 function ContactUs() {
   const [fullName, setFullName] = useState('');
   const [subject, setSubject] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(getUserEmail());
   const [comment, setComment] = useState('');
-
   const [requestSent, setRequestSent] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -41,15 +41,15 @@ function ContactUs() {
             <div className="col-md-6">
               <div className="form-group">
                 <label htmlFor="name">Full Name<span className="required">*</span></label>
-                <input type="text" maxLength={50} value={fullName} onChange={(e) => setFullName(e.target.value)} className="form-control" id="name" placeholder="Enter your full name" required/>
+                <input type="text" maxLength={50} value={fullName} onChange={(e) => setFullName(e.target.value)} className="form-control" id="name" placeholder="Enter your full name" required />
               </div>
               <div className="form-group">
                 <label htmlFor="email">Email Address<span className="required">*</span></label>
-                <input type="email" maxLength={50} value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" id="email" placeholder="Enter your email address" required/>
+                <input type="email" maxLength={50} value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" id="email" placeholder="Enter your email address" required />
               </div>
               <div className="form-group">
                 <label htmlFor="subject">Subject<span className="required">*</span></label>
-                <input type="text" maxLength={100} value={subject} onChange={(e) => setSubject(e.target.value)} className="form-control" id="subject" placeholder="Enter your subject" required/>
+                <input type="text" maxLength={100} value={subject} onChange={(e) => setSubject(e.target.value)} className="form-control" id="subject" placeholder="Enter your subject" required />
               </div>
             </div>
             <div className="col-md-6">

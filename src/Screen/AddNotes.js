@@ -1,11 +1,14 @@
-import { React, useState } from 'react';
+import { React, useState,useEffect  } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import api from '../Services/api';
 import Banner from '../Component/banner';
 import { useNavigate } from 'react-router-dom';
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { getUserEmail } from '../Services/auth';
+import * as pdfjsLib from 'pdfjs-dist';
 
 const AddNotes = () => {
     const navigate = useNavigate();
@@ -13,13 +16,16 @@ const AddNotes = () => {
     const [displayPictureP, setDisplayPictureP] = useState();
     const [previewUploadP, setPreviewUploadP] = useState();
     const [notesAttachmentP, setNotesAttachmentP] = useState();
+    const [countries, setCountries] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [noteTypes, setNoteTypes] = useState([]);
 
 
     const validationSchema = Yup.object().shape({
         noteTitle: Yup.string().required('Note Title is required'),
         category: Yup.string().required('Category is required'),
         notesType: Yup.string().required('Notes Type is required'),
-        numberOfPages: Yup.number().required('Number of Pages is required'),
+        numberOfPages: Yup.number().min(0, 'Number of pages cannot be negative'),
         notesDescription: Yup.string().required('Notes Description is required'),
         universityInformation: Yup.string().required('University Information is required'),
         country: Yup.string().required('Country is required'),
@@ -33,12 +39,12 @@ const AddNotes = () => {
         previewUploadP: Yup.string()
     });
 
-    const { register, handleSubmit, formState: { errors }} = useForm({
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm({
         resolver: yupResolver(validationSchema)
     });
     const onSubmit = async (data) => {
         try {
-            const userEmail = localStorage.getItem('email');
+            const userEmail = getUserEmail();
             data.publishFlag = 'N';
             const formData = new FormData();
             // Append each field to the formData object
@@ -69,8 +75,29 @@ const AddNotes = () => {
                 },
             });
             console.log('Note added successfully:', response.data);
+            toast.success('Notes added successfully', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            setTimeout(() => {
+                navigate(`/sellNotes`);
+            }, 4000);
         } catch (error) {
             console.error('Error adding note:', error);
+            toast.error('Failed to save notes. Please try again.', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
         }
     };
     const handleDisplayPictureChange = (event) => {
@@ -84,10 +111,25 @@ const AddNotes = () => {
         setPreviewUploadP(file);
     };
 
-    const handleNotesAttachmentChange = (event) => {
+    const handleNotesAttachmentChange = async (event) => {
         const file = event.target.files[0];
-        console.log(file);
         setNotesAttachmentP(file);
+
+        if (file) {
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async () => {
+                    const typedArray = new Uint8Array(fileReader.result);
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`;
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    setValue('numberOfPages', pdf.numPages);
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('Error counting PDF pages:', error);
+                toast.error('Error reading PDF. Please try again.');
+            }
+        }
     };
 
     const handleSellForChange = (event) => {
@@ -100,9 +142,9 @@ const AddNotes = () => {
             data.statusFlag = 'S'; // Set the status flag directly in the form data
             onSubmit(data);       // Pass the updated data to onSubmit
         })();
-        navigate(`/sellNotes`);
+
     };
-    
+
     const handlePublish = () => {
         console.log("Check");
         const confirmed = window.confirm("Publishing this note will send the note to the administrator for review. Once reviewed and approved, it will be published to the portal. Press Yes to continue.");
@@ -113,7 +155,25 @@ const AddNotes = () => {
             })();
         }
     };
-    
+    useEffect(() => {
+        const fetchLookupData = async () => {
+            try {
+                const response = await api.get('/getAllLookup');
+                const filteredCountries = response.data.filter(item => item.typeCode === "CON");
+                const filteredCategories = response.data.filter(item => item.typeCode === "CAT");
+                const filteredNoteTypes = response.data.filter(item => item.typeCode === "TYP");
+
+                setCountries(filteredCountries);
+                setCategories(filteredCategories);
+                setNoteTypes(filteredNoteTypes);
+            } catch (error) {
+                console.error('Error fetching lookup data:', error);
+            }
+        };
+
+        fetchLookupData();
+    }, []);
+
     return (
 
         <div>
@@ -126,7 +186,7 @@ const AddNotes = () => {
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>Note Title<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('noteTitle')} />
+                                <input type="text" className="form-control" {...register('noteTitle')} maxLength="100" />
                                 {errors.noteTitle && <span className="text-danger">{errors.noteTitle.message}</span>}
                             </div>
                             {/* onChange={handleDisplayPictureChange} */}
@@ -137,14 +197,28 @@ const AddNotes = () => {
                             </div>
                             <div className="form-group">
                                 <label>Notes Type<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('notesType')} />
+                                <select className="form-control" {...register('notesType')}>
+                        <option value="">Select Notes Type</option>
+                        {noteTypes.map((noteType) => (
+                            <option key={noteType.TypeId} value={noteType.TypeId}>
+                                {noteType.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.notesType && <span className="text-danger">{errors.notesType.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>Category<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('category')} />
+                                <select className="form-control" {...register('category')}>
+                        <option value="">Select Category</option>
+                        {categories.map((category) => (
+                            <option key={category.TypeId} value={category.TypeId}>
+                                {category.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.category && <span className="text-danger">{errors.category.message}</span>}
                             </div>
                             <div className="form-group">
@@ -154,7 +228,7 @@ const AddNotes = () => {
                             </div>
                             <div className="form-group">
                                 <label>Number of Pages<span className="required">*</span></label>
-                                <input type="number" className="form-control" {...register('numberOfPages')} />
+                                <input type="number" className="form-control" {...register('numberOfPages')} defaultValue={0} disabled />
                                 {errors.numberOfPages && <span className="text-danger">{errors.numberOfPages.message}</span>}
                             </div>
                         </div>
@@ -170,16 +244,23 @@ const AddNotes = () => {
                     <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>Institution Information</h1>
                     <div className="row">
                         <div className="col-md-6">
-                            <div className="form-group">
-                                <label>Country<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('country')} />
-                                {errors.country && <span className="text-danger">{errors.country.message}</span>}
-                            </div>
+                        <div className="form-group">
+                    <label>Country<span className="required">*</span></label>
+                    <select className="form-control" {...register('country')}>
+    <option value="">Select Country</option>
+    {countries.map((country) => (
+        <option key={country.TypeId} value={country.TypeId}>
+            {country.typeName}
+        </option>
+    ))}
+</select>
+                    {errors.country && <span className="text-danger">{errors.country.message}</span>}
+                </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>University Information<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('universityInformation')} />
+                                <input type="text" className="form-control" {...register('universityInformation')} maxLength="200" />
                                 {errors.universityInformation && <span className="text-danger">{errors.universityInformation.message}</span>}
                             </div>
                         </div>
@@ -189,19 +270,19 @@ const AddNotes = () => {
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>Course Information<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('courseInformation')} />
+                                <input type="text" className="form-control" {...register('courseInformation')} maxLength="100" />
                                 {errors.courseInformation && <span className="text-danger">{errors.courseInformation.message}</span>}
                             </div>
                             <div className="form-group">
                                 <label>Professor/Lecturer<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('professorLecturer')} />
+                                <input type="text" className="form-control" {...register('professorLecturer')} maxLength="100" />
                                 {errors.professorLecturer && <span className="text-danger">{errors.professorLecturer.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
                                 <label>Course Code<span className="required">*</span></label>
-                                <input type="text" className="form-control" {...register('courseCode')} />
+                                <input type="text" className="form-control" {...register('courseCode')} maxLength="100" />
                                 {errors.courseCode && <span className="text-danger">{errors.courseCode.message}</span>}
                             </div>
                         </div>
@@ -245,6 +326,7 @@ const AddNotes = () => {
 
                 </form>
             </div>
+            <ToastContainer />
         </div>
     );
 };

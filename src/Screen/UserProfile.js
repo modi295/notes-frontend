@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Banner from '../Component/banner';
 import api from '../Services/api';
+import { getUserEmail } from '../Services/auth';
+
 
 function UserProfile() {
     const [firstName, setFirstName] = useState('');
@@ -29,13 +31,13 @@ function UserProfile() {
         setLastName(newLastName);
     };
     useEffect(() => {
-        const userEmail = localStorage.getItem('email');
+        const userEmail = getUserEmail();
         setEmail(userEmail);
     }, []);
     useEffect(() => {
         // Fetch user data based on the email from the server
         const fetchUserData = async () => {
-            const userEmail = localStorage.getItem('email');
+            const userEmail = getUserEmail();
             try {
                 const response = await api.get(`/users/${userEmail}`);
                 const userData = response.data;
@@ -171,10 +173,10 @@ function UserProfile() {
                                 </div>
                             </div>
                             {profilePicture && (
-              <div style={{ paddingTop:'20px', paddingBottom:'1px' }}>
-              <img src={profilePicture} alt="Profile" className="rounded-circle img-fluid" width="38" height="38" /> 
-              </div>                        
-             )}
+                                <div style={{ paddingTop: '20px', paddingBottom: '1px' }}>
+                                    <img src={profilePicture} alt="Profile" className="rounded-circle img-fluid" width="38" height="38" />
+                                </div>
+                            )}
                         </div>
                     </div>
                     <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>Address Details</h1>

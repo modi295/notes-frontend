@@ -5,11 +5,10 @@ import Dashboard from '../Component/Dashboard';
 
 function SellNotes() {
   return (
-<div>
-
-     <Dashboard/>
-     <InProgressNotes />
-     <PublishNotes />
+    <div>
+      <Dashboard />
+      <InProgressNotes />
+      <PublishNotes />
     </div>
   )
 }

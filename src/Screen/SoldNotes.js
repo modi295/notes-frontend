@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
+import { getUserEmail } from '../Services/auth';
 
 function SoldNotes() {
     const navigate = useNavigate();
@@ -61,7 +62,7 @@ function SoldNotes() {
             sortable: true,
             width: '190px'
         },
-        { 
+        {
             name: "ACTION",
             cell: (row) => (
 
@@ -83,14 +84,14 @@ function SoldNotes() {
     const [data, setData] = useState([]);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState([]);
-    
+
     const fetchData = async () => {
         try {
-            const email = localStorage.getItem('email');
+            const email = getUserEmail();
             const url = `http://localhost:5000/api/soldnotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
-    
+
             if (Array.isArray(res)) {
                 setData(res);
                 setFilter(res);
@@ -106,7 +107,7 @@ function SoldNotes() {
             setFilter([]);
         }
     };
-    
+
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
     };
@@ -125,7 +126,7 @@ function SoldNotes() {
         setFilter(result);
     }, [data, search]);
 
-   
+
     return (
         <div style={{ paddingTop: '100px' }}>
             <div className='container d-flex justify-content-center'>
@@ -144,9 +145,9 @@ function SoldNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>My Sold Notes</h1>
-                                <input type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
-                            </div>
+                                    <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>My Sold Notes</h1>
+                                    <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
+                                </div>
                             }
                         />
                     </div>

@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { Link,useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../css/Login.css'
 import api from '../Services/api';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+
 
 function Register() {
+    const navigate = useNavigate();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -15,7 +19,6 @@ function Register() {
     const [registrationSuccess, setRegistrationSuccess] = useState(false); // State for registration success
     const [passwordsMatchError, setPasswordsMatchError] = useState(false);
     const [passwordLengthError, setPasswordLengthError] = useState(false);
-    const navigate = useNavigate();
 
     const toggleConfirmPasswordVisibility = () => {
         setShowConfirmPassword(!showConfirmPassword); // Toggle confirm password visibility
@@ -25,17 +28,36 @@ function Register() {
     };
     const strongPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])[^\s]{6,24}$/;
 
+    const checkEmailExists = async (email) => {
+        try {
+            const response = await api.get(`/users/${email}`);
+            return response.data;
+        } catch (error) {
+            return null;
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // if (password.length < 8) {
-        //     setPasswordLengthError(true);
-        //     return;
-        // }
+
+        const existingUser = await checkEmailExists(email);
+
+        if (existingUser) {
+            toast.warn('Email already exists. Please use a different email.', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return;
+        }
         if (!strongPasswordRegex.test(password)) {
             setPasswordLengthError(true); // Update error message to mention specific requirements
             return;
-          }
+        }
         if (password !== confirmPassword) {
             setPasswordsMatchError(true); // Set error state
             return;
@@ -44,7 +66,19 @@ function Register() {
             await api.post('/register', { firstName, lastName, email, password });
             setRegistrationSuccess(true); // Set registration success state
             setPasswordsMatchError(false);
-           // navigate('/login'); 
+            toast.success('Register successfully', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            setTimeout(() => {
+                navigate(`/login`);
+            }, 4000);
+            // navigate('/login'); 
         } catch (error) {
             alert('Error creating account: ' + error.response.data.error);
         }
@@ -65,6 +99,8 @@ function Register() {
                         {registrationSuccess && ( // Conditionally render success message
                             <p className="login-success">
                                 <span className="tick" style={{ color: 'green' }}>&#10004;</span> Your account has been successfully created!
+                                <br />
+                                <span className="tick" style={{ color: 'green' }}>&#10004;</span> Email Sent. Please verify it!
                             </p>
                         )}
                         <form onSubmit={handleSubmit}>
@@ -83,7 +119,7 @@ function Register() {
                             <div className="form-group">
                                 <label htmlFor="password">Password<span className="required">*</span></label>
                                 <div className="password-container">
-                                    <input type={showPassword ? 'text' : 'password'} maxLength={24} value={password} onChange={(e) => {setPassword(e.target.value); setPasswordLengthError(false);}} placeholder="Enter Password" className="form-control" required />
+                                    <input type={showPassword ? 'text' : 'password'} maxLength={24} value={password} onChange={(e) => { setPassword(e.target.value); setPasswordLengthError(false); }} placeholder="Enter Password" className="form-control" required />
                                     <i className={`fas fa-eye${showPassword ? '' : '-slash'}`} onClick={togglePasswordVisibility}></i>
                                 </div>
                                 {passwordLengthError && (
@@ -95,7 +131,7 @@ function Register() {
                             <div className="form-group">
                                 <label htmlFor="password">Confirm Password<span className="required">*</span></label>
                                 <div className="password-container">
-                                    <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => {setConfirmPassword(e.target.value);setPasswordsMatchError(false);}} placeholder="Confirm Password" className="form-control" required />
+                                    <input type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordsMatchError(false); }} placeholder="Confirm Password" className="form-control" required />
                                     <i className={`fas fa-eye${showConfirmPassword ? '' : '-slash'}`} onClick={toggleConfirmPasswordVisibility} ></i>
                                 </div>
                                 {passwordsMatchError && (

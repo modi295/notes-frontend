@@ -5,20 +5,27 @@ import * as Yup from 'yup';
 import api from '../Services/api';
 import Banner from '../Component/banner';
 import { useParams } from 'react-router-dom';
+import { getUserEmail } from '../Services/auth';
+import { toast } from 'react-toastify';
+import * as pdfjsLib from 'pdfjs-dist';
+import { useNavigate } from 'react-router-dom';
 
-function EditNotes(){
+function EditNotes() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [note, setNote] = useState(null);
     const [sellForValue, setSellForValue] = useState('');
     const [displayPictureP, setDisplayPictureP] = useState();
     const [previewUploadP, setPreviewUploadP] = useState();
     const [notesAttachmentP, setNotesAttachmentP] = useState();
+    const [countries, setCountries] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [noteTypes, setNoteTypes] = useState([]);
 
     const validationSchema = Yup.object().shape({
         noteTitle: Yup.string().required('Note Title is required'),
         category: Yup.string().required('Category is required'),
         notesType: Yup.string().required('Notes Type is required'),
-        numberOfPages: Yup.number().required('Number of Pages is required'),
         notesDescription: Yup.string().required('Notes Description is required'),
         universityInformation: Yup.string().required('University Information is required'),
         country: Yup.string().required('Country is required'),
@@ -34,42 +41,17 @@ function EditNotes(){
         previewUploadP: Yup.string()
     });
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm({
         resolver: yupResolver(validationSchema)
     });
 
-    useEffect(() => {
-        const fetchNote = async () => {
-            try {
-                const response = await api.get(`/notesById/${id}`);
-                setNote(response.data); // Assuming API response returns the note object
-            } catch (error) {
-                console.error('Error fetching note:', error);
-            }
-        };
-        fetchNote();
-    }, [id]); 
-
-    // const onSubmit = async (data) => {
-    //     try {
-    //         // Get email from local storage
-    //         const email = localStorage.getItem('email');
-    //         // Add email to the data being sent to the API
-    //         const requestData = { ...data, email };
     
-    //         const response = await api.put(`/updateNotes/${note.id}`, requestData);
-    //         console.log('Note updated successfully:', response.data);
-    //         // Handle redirection or any other actions after successful update
-    //     } catch (error) {
-    //         console.error('Error updating note:', error);
-    //     }
-    // };
+
     const onSubmit = async (data, noteId) => {
         try {
-            const userEmail = localStorage.getItem('email');
+            const userEmail = getUserEmail();
             const formData = new FormData();
             data.publishFlag = 'N';
-            data.statusFlag = 'S';
             formData.append('email', userEmail);
             formData.append('noteTitle', data.noteTitle);
             formData.append('category', data.category);
@@ -88,22 +70,40 @@ function EditNotes(){
             formData.append('notesAttachmentP', notesAttachmentP);
             formData.append('previewUploadP', previewUploadP);
             formData.append('displayPictureP', displayPictureP);
-    
+
             console.log(formData);
-            const { noteId } = data;
             // Send formData to the API endpoint for updating the note
-            const response = await api.put(`/updateNotes/${noteId}`, formData, {
+            const response = await api.put(`/updateNotes/${id}`, formData, {
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "multipart/form-data"
                 },
             });
-    
             console.log('Note updated successfully:', response.data);
+            toast.success('Notes added successfully', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            setTimeout(() => {
+                navigate(`/sellNotes`);
+            }, 4000);
         } catch (error) {
             console.error('Error updating note:', error);
+            toast.error('Failed to save notes. Please try again.', {
+                position: 'bottom-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
         }
     };
-    
     const handleDisplayPictureChange = (event) => {
         const file = event.target.files[0];
         console.log(file);
@@ -115,11 +115,83 @@ function EditNotes(){
         setPreviewUploadP(file);
     };
 
-    const handleNotesAttachmentChange = (event) => {
+    const handleNotesAttachmentChange = async (event) => {
         const file = event.target.files[0];
-        console.log(file);
         setNotesAttachmentP(file);
+
+        if (file) {
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async () => {
+                    const typedArray = new Uint8Array(fileReader.result);
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`;
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    setValue('numberOfPages', pdf.numPages);
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('Error counting PDF pages:', error);
+                toast.error('Error reading PDF. Please try again.');
+            }
+        }
     };
+
+
+    const handleSave = () => {
+        console.log("Check");
+        handleSubmit((data) => {
+            data.statusFlag = 'S'; // Set the status flag directly in the form data
+            onSubmit(data);       // Pass the updated data to onSubmit
+        })();
+
+    };
+
+    const handlePublish = () => {
+        console.log("Check");
+        const confirmed = window.confirm("Publishing this note will send the note to the administrator for review. Once reviewed and approved, it will be published to the portal. Press Yes to continue.");
+        if (confirmed) {
+            handleSubmit((data) => {
+                data.statusFlag = 'P'; // Set the status flag for publish
+                onSubmit(data);       // Pass the updated data to onSubmit
+            })();
+        }
+    };
+
+    useEffect(() => {
+        const fetchNoteAndLookupData = async () => {
+            try {
+                const noteResponse = await api.get(`/notesById/${id}`);
+                setNote(noteResponse.data);
+
+                const lookupResponse = await api.get('/getAllLookup');
+                const filteredCountries = lookupResponse.data.filter(item => item.typeCode === "CON");
+                const filteredCategories = lookupResponse.data.filter(item => item.typeCode === "CAT");
+                const filteredNoteTypes = lookupResponse.data.filter(item => item.typeCode === "TYP");
+
+                setCountries(filteredCountries);
+                setCategories(filteredCategories);
+                setNoteTypes(filteredNoteTypes);
+
+                if (noteResponse.data) {
+                    setValue('noteTitle', noteResponse.data.noteTitle);
+                    setValue('category', noteResponse.data.category);
+                    setValue('notesType', noteResponse.data.notesType);
+                    setValue('notesDescription', noteResponse.data.notesDescription);
+                    setValue('universityInformation', noteResponse.data.universityInformation);
+                    setValue('country', noteResponse.data.country);
+                    setValue('courseInformation', noteResponse.data.courseInformation);
+                    setValue('courseCode', noteResponse.data.courseCode);
+                    setValue('professorLecturer', noteResponse.data.professorLecturer);
+                    setValue('sellFor', noteResponse.data.sellFor);
+                    setValue('sellPrice', noteResponse.data.sellPrice);
+                    setValue('numberOfPages', noteResponse.data.numberOfPages);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+        fetchNoteAndLookupData();
+    }, [id, setValue]);
 
     if (!note) {
         return <div>Loading...</div>;
@@ -136,41 +208,54 @@ function EditNotes(){
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Note Title</label>
+                                <label>Note Title<span className="required">*</span></label>
                                 <input type="text" className="form-control" defaultValue={note.noteTitle} {...register('noteTitle')} />
                                 {errors.noteTitle && <span className="text-danger">{errors.noteTitle.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Display Picture</label>
+                                <label>Display Picture<span className="required">*</span>{note.displayPictureP && (<span> ({note.displayPictureP.substring(note.displayPictureP.lastIndexOf('/') + 1)})</span>)}</label>
                                 <input type="file" className="form-control" onChange={handleDisplayPictureChange} accept="image/*" />
-                                {errors.displayPicture && <span className="text-danger">{errors.displayPicture.message}</span>}
+                                {errors.displayPictureP && <span className="text-danger">{errors.displayPictureP.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Notes Type</label>
-                                <input type="text" className="form-control" defaultValue={note.notesType} {...register('notesType')} />
+                                <label>Notes Type<span className="required">*</span></label>
+                                <select className="form-control" {...register('notesType')}>
+                        <option value="">Select Notes Type</option>
+                        {noteTypes.map((noteType) => (
+                            <option key={noteType.TypeId} value={noteType.TypeId}>
+                                {noteType.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.notesType && <span className="text-danger">{errors.notesType.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Category</label>
-                                <input type="text" className="form-control" defaultValue={note.category} {...register('category')} />
+                                <label>Category<span className="required">*</span></label>
+                                <select className="form-control" {...register('category')}>
+                        <option value="">Select Category</option>
+                        {categories.map((category) => (
+                            <option key={category.TypeId} value={category.TypeId}>
+                                {category.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.category && <span className="text-danger">{errors.category.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Notes Attachment</label>
+                                <label>Notes Attachment<span className="required">*</span>{note.notesAttachmentP && (<span> ({note.notesAttachmentP.substring(note.notesAttachmentP.lastIndexOf('/') + 1)})</span>)}</label>
                                 <input type="file" className="form-control" onChange={handleNotesAttachmentChange} accept=".pdf" />
-                                {errors.notesAttachment && <span className="text-danger">{errors.notesAttachment.message}</span>}
+                                {errors.notesAttachmentP && <span className="text-danger">{errors.notesAttachmentP.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Number of Pages</label>
-                                <input type="number" className="form-control" defaultValue={note.numberOfPages} {...register('numberOfPages')} />
-                                {errors.numberOfPages && <span className="text-danger">{errors.numberOfPages.message}</span>}
+                                <label>Number of Pages<span className="required">*</span></label>
+                                <input type="number" className="form-control" {...register('numberOfPages')} defaultValue={note.numberOfPages} disabled />
                             </div>
                         </div>
                         <div className="col-md-12">
                             <div className="form-group">
-                                <label>Notes Description</label>
+                                <label>Notes Description<span className="required">*</span></label>
                                 <textarea className="form-control" defaultValue={note.notesDescription} {...register('notesDescription')} />
                                 {errors.notesDescription && <span className="text-danger">{errors.notesDescription.message}</span>}
                             </div>
@@ -180,14 +265,21 @@ function EditNotes(){
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Country</label>
-                                <input type="text" className="form-control" defaultValue={note.country} {...register('country')} />
+                                <label>Country<span className="required">*</span></label>
+                                <select className="form-control" {...register('country')}>
+    <option value="">Select Country</option>
+    {countries.map((country) => (
+        <option key={country.TypeId} value={country.TypeId}>
+            {country.typeName}
+        </option>
+    ))}
+</select>
                                 {errors.country && <span className="text-danger">{errors.country.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>University Information</label>
+                                <label>University Information<span className="required">*</span></label>
                                 <input type="text" className="form-control" defaultValue={note.universityInformation} {...register('universityInformation')} />
                                 {errors.universityInformation && <span className="text-danger">{errors.universityInformation.message}</span>}
                             </div>
@@ -197,19 +289,19 @@ function EditNotes(){
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Course Information</label>
+                                <label>Course Information<span className="required">*</span></label>
                                 <input type="text" className="form-control" defaultValue={note.courseInformation} {...register('courseInformation')} />
                                 {errors.courseInformation && <span className="text-danger">{errors.courseInformation.message}</span>}
                             </div>
                             <div className="form-group">
-                                <label>Professor/Lecturer</label>
+                                <label>Professor/Lecturer<span className="required">*</span></label>
                                 <input type="text" className="form-control" defaultValue={note.professorLecturer} {...register('professorLecturer')} />
                                 {errors.professorLecturer && <span className="text-danger">{errors.professorLecturer.message}</span>}
                             </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Course Code</label>
+                                <label>Course Code<span className="required">*</span></label>
                                 <input type="text" className="form-control" defaultValue={note.courseCode} {...register('courseCode')} />
                                 {errors.courseCode && <span className="text-danger">{errors.courseCode.message}</span>}
                             </div>
@@ -219,7 +311,7 @@ function EditNotes(){
                     <div className="row">
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Sell For</label>
+                                <label>Sell For<span className="required">*</span></label>
                                 <div>
                                     <label>
                                         <input type="radio" value="paid" {...register('sellFor')} defaultChecked={note.sellFor === 'paid'} onChange={(e) => setSellForValue(e.target.value)} /> Paid
@@ -240,13 +332,16 @@ function EditNotes(){
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Preview Upload</label>
+                                <label>Preview Upload<span className="required">*</span>{note.previewUploadP && (<span> ({note.previewUploadP.substring(note.previewUploadP.lastIndexOf('/') + 1)})</span>)}</label>
                                 <input type="file" className="form-control" onChange={handlePreviewUploadChange} accept=".pdf" />
-                                {errors.previewUpload && <span className="text-danger">{errors.previewUpload.message}</span>}
+                                {errors.previewUploadP && <span className="text-danger">{errors.previewUploadP.message}</span>}
                             </div>
                         </div>
                     </div>
-                    <button type="submit" className="btn btn-primary">Update</button>
+                    <div className="row">
+                        <div className="col-1 pt-2 text-end"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="button" onClick={handleSave} className=" btn btn-sm">SAVE</button></div>
+                        <div className="col-11 pt-2 text-start"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="button" onClick={handlePublish} className=" btn btn-sm">Publish</button></div>
+                    </div>
                 </form>
             </div>
         </div>

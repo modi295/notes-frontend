@@ -68,13 +68,14 @@ function RejectedNotes() {
         {
             name: "ACTION",
             cell: (row) => (
-                <div 
+                <div
                     style={{ position: 'relative', cursor: 'pointer' }}
                     onMouseEnter={() => setActiveDropdown(row.id)}
                     onMouseLeave={() => setActiveDropdown(null)}
                 >
                     <img
                         src="dots.png"
+                        alt="Action"
                         style={{ cursor: 'pointer' }}
                     />
                     {activeDropdown === row.id && (
@@ -89,19 +90,19 @@ function RejectedNotes() {
                             zIndex: 10
                         }}>
                             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleDownload(row.notesAttachmentP)}
                                 >
                                     Download Notes
                                 </li>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleView(row.id)}
                                 >
                                     View Details
                                 </li>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer' }}
                                     onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}
                                 >
@@ -148,16 +149,13 @@ function RejectedNotes() {
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
     };
-    const handleView2 = (id) => {
-        navigate(`/downloadNotes/${id}`);
-    };
     const handleDownload = (filePath) => {
         if (!filePath) {
             alert("No attachment available for download");
             return;
         }
         const link = document.createElement("a");
-        link.href = filePath; 
+        link.href = filePath;
         link.setAttribute("download", "");
         document.body.appendChild(link);
         link.click();
@@ -192,7 +190,7 @@ function RejectedNotes() {
                 remark: remark.trim()
             };
 
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotes/${unpublishId}`, {
+            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedNoteData)
@@ -212,7 +210,7 @@ function RejectedNotes() {
             alert('Error updating status.');
         }
     };
-  
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -260,7 +258,7 @@ function RejectedNotes() {
                                                 backgroundSize: '10px',
                                             }}
                                         >
-                                            <option value=''>Sellers</option>
+                                            <option value=''>Sellers ▼</option>
                                             {distinctPublishers.map((publisher, index) => (
                                                 <option key={index} value={publisher}>{publisher}</option>
                                             ))}
@@ -286,8 +284,8 @@ function RejectedNotes() {
                     <div className="modal-container">
                         <h4>{selectedNote.title} - {selectedNote.category}</h4>
                         <label>Remarks</label>
-                        <textarea 
-                            className="form-control" 
+                        <textarea
+                            className="form-control"
                             placeholder="Write remarks..."
                             maxLength="200"
                             value={remark}

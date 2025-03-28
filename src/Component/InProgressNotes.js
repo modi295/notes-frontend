@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
+import { getUserEmail } from '../Services/auth';
 
 function InProgressNotes() {
     const navigate = useNavigate();
@@ -68,11 +69,11 @@ function InProgressNotes() {
 
     const fetchData = async () => {
         try {
-            const email = localStorage.getItem('email');
+            const email = getUserEmail();
             const url = `http://localhost:5000/api/saveNotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
-    
+
             if (Array.isArray(res)) {
                 setData(res);
                 setFilter(res);
@@ -88,7 +89,7 @@ function InProgressNotes() {
             setFilter([]);
         }
     };
-    
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -120,34 +121,34 @@ function InProgressNotes() {
         navigate(`/editNotes/${id}`);
     };
 
-  return (
-    <div style={{ paddingTop: '30px' }}>
-    <div className='container d-flex justify-content-center'>
-        <div className='row'>
-            <div className='col-md-12'>
-                <DataTable
-                    className="datatable-border"
-                    columns={columns}
-                    data={filter}
-                    pagination
-                    paginationPerPage={5}
-                    // selectableRows
-                    fixedHeader
-                    selectableRowsHighlight
-                    highlightOnHover
-                    subHeader
-                    subHeaderComponent={
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>In Progress Notes</h1>
-                        <input  type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
+    return (
+        <div style={{ paddingTop: '30px' }}>
+            <div className='container d-flex justify-content-center'>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        <DataTable
+                            className="datatable-border"
+                            columns={columns}
+                            data={filter}
+                            pagination
+                            paginationPerPage={5}
+                            // selectableRows
+                            fixedHeader
+                            selectableRowsHighlight
+                            highlightOnHover
+                            subHeader
+                            subHeaderComponent={
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>In Progress Notes</h1>
+                                    <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
+                                </div>
+                            }
+                        />
                     </div>
-                    }
-                />
+                </div>
             </div>
         </div>
-    </div>
-</div>
-  )
+    )
 }
 
 export default InProgressNotes

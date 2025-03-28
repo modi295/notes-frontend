@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../Services/api';
 import '../css/Login.css';
+import { getUserEmail } from '../Services/auth';
 
 function ChangePassword() {
     const [oldPassword, setOldPassword] = useState('');
@@ -42,7 +43,7 @@ function ChangePassword() {
         }
 
         try {
-            const email = localStorage.getItem('email');
+            const email = getUserEmail();
             await api.put('/changePassword', { email, oldPassword, newPassword });
             setSuccessMessage('Password updated successfully');
             setErrorMessage('');

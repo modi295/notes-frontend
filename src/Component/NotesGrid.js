@@ -23,7 +23,7 @@ const NotesGrid = () => {
 
 
     const getNotes = async () => {
-        const response = await fetch('http://localhost:5000/api/allNotes');
+        const response = await fetch('http://localhost:5000/api/allpublishNotes');
         const data = await response.json();
         setNotes(data);
 

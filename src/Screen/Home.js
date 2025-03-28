@@ -16,7 +16,7 @@ function Home() {
         backgroundColor: '#734dc4',
         color: 'white',
     };
-   
+
     return (
         <div>
             <Banner text="Welcome to our Learning Platform!" imageHeight="300px" />
@@ -60,7 +60,7 @@ function Home() {
             <h1 className='c-text'>What our Customer are Saying</h1>
             <PeopleList />
             <Footer />
-            
+
         </div>
     )
 }

@@ -3,7 +3,7 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 import api from '../Services/api';
-
+import { getUserEmail } from '../Services/auth';
 
 function BuyRequest() {
     const navigate = useNavigate();
@@ -63,7 +63,7 @@ function BuyRequest() {
             sortable: true,
             width: '190px'
         },
-        { 
+        {
             name: "ACTION",
             cell: (row) => (
 
@@ -80,7 +80,7 @@ function BuyRequest() {
             ),
             width: '120px'
         },
-        { 
+        {
             name: "ACTION",
             cell: (row) => (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
@@ -107,11 +107,11 @@ function BuyRequest() {
 
     const fetchData = async () => {
         try {
-            const email = localStorage.getItem('email');
+            const email = getUserEmail();
             const url = `http://localhost:5000/api/buyernotes/${email}`;
             const req = await fetch(url);
             const res = await req.json();
-    
+
             if (Array.isArray(res)) {
                 setData(res);
                 setFilter(res);
@@ -127,11 +127,11 @@ function BuyRequest() {
             setFilter([]);
         }
     };
-    
+
     const postDownloadNote = async (note) => {
         try {
-            const email = localStorage.getItem('email'); 
-            
+            const email = getUserEmail();
+
             const data = {
                 email,
                 noteId: note.noteId,
@@ -142,13 +142,13 @@ function BuyRequest() {
                 purchaseEmail: email,
                 buyerEmail: note.email
             };
-            
+
             if (note.sellPrice > 0) {
                 data.PurchaseTypeFlag = 'P';
             }
-    
+
             console.log("Download Note Data: ", data); // Log the data being sent
-    
+
             await api.post('/downloadnotes', data);
         } catch (error) {
             console.error(error);
@@ -158,7 +158,7 @@ function BuyRequest() {
 
     const postSoldNote = async (note) => {
         try {
-            const email = localStorage.getItem('email'); 
+            const email = getUserEmail();
             const data = {
                 email,
                 noteId: note.noteId,
@@ -166,12 +166,12 @@ function BuyRequest() {
                 category: note.category,
                 sellFor: note.sellFor,
                 sellPrice: note.sellPrice,
-                purchaseEmail:email,
+                purchaseEmail: email,
                 buyerEmail: note.email
             };
-            
+
             console.log("Sold Note Data: ", data); // Log the data being sent
-    
+
             await api.post('/soldnotes', data);
         } catch (error) {
             console.error(error);
@@ -185,9 +185,9 @@ function BuyRequest() {
                 ...note,
                 approveFlag: 'A',
             };
-    
+
             const response = await api.put(`/buyernotes/${note.id}`, updatedData);
-    
+
             console.log('Buyer note updated:', response.data);
         } catch (error) {
             console.error('Error updating buyer note:', error);
@@ -220,7 +220,7 @@ function BuyRequest() {
         setFilter(result);
     }, [data, search]);
 
-   
+
     return (
         <div style={{ paddingTop: '100px' }}>
             <div className='container d-flex justify-content-center'>
@@ -239,9 +239,9 @@ function BuyRequest() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>Buyer Request</h1>
-                                <input type='text' className='w-25 form-control'  placeholder='search..' value={search}  onChange={(e) => setSearch(e.target.value)} />
-                            </div>
+                                    <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>Buyer Request</h1>
+                                    <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
+                                </div>
                             }
                         />
                     </div>

@@ -1,4 +1,4 @@
-import {createBrowserRouter} from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import React from 'react';
 import Navigation from '../Component/Navigation';
 import Home from '../Screen/Home';
@@ -23,98 +23,149 @@ import DownloadNotes from "../Screen/DownloadNotes";
 import UnderReview from "../Screen/UnderReview";
 import RejectedNotes from "../Screen/RejectedNotes";
 import AllPublishNotes from "../Component/allPublishNotes";
-
-
+import Member from "../Screen/Member";
+import MemberDetails from "../Screen/MemberDetails";
+import AddAdministrator from "../Screen/AddAdministrator";
+import Administrator from "../Screen/Administrator";
+import EditAdministrator from "../Screen/EditAdministrator";
+import VerifyEmail from "../Screen/VerifyEmail";
+import Lookup from "../Screen/Lookup";
+import AddLookup from "../Screen/AddLookup";
+import EditLookup from "../Screen/EditLookup";
 
 const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <div><Navigation /><Home /> </div>,
-    },
-    {
-      path: "/faq",
-      element: <div><Navigation />{<Protected Component={Faq} access={true}/>}</div>,
-    },
-    {
-      path: "/login",
-      element: <div><Navigation /><Login /></div>,
-    },
-    {
-        path: "/register",
-        element: <div><Navigation /><Register /></div>,
-      },
-    {
-      path: "/searchNote",
-      element: <div><Navigation /><SearchNote /></div>,
-    },
-    {
-      path: "/contactUs",
-      element: <div><Navigation />{<Protected Component={ContactUs} />}</div>,
-    },
-    {
-      path: "/changePassword",
-      element: <div><Navigation />{<Protected Component={ChangePassword} />}</div>,
-    },
-    {
-      path: "/forgotPassword",
-      element: <div><Navigation /><ForgotPassword /></div>,
-    },
-    {
-      path: "/userprofile",
-      element: <div><Navigation />{<Protected Component={UserProfile} />}</div>,
-    },
-    {
-      path: "/addNotes",
-      element: <div><Navigation />{<Protected Component={AddNotes} />}</div>,
-    },
-    {
-      path: "/sellNotes",
-      element: <div><Navigation />{<Protected Component={SellNotes} />}</div>,
-    },
-    {
-      path: "/editNotes/:id",
-      element: <div><Navigation />{<Protected Component={EditNotes} />}</div>,
-    },
-    {
-      path: "/viewNotes/:id",
-      element: <div><Navigation /><ViewNotes /></div>,
-    },
-    {
-      path: "/downloadNotes",
-      element: <div><Navigation />{<Protected Component={MyDownload} />}</div>,
-    },
-    {
-      path: "/soldNotes",
-      element: <div><Navigation />{<Protected Component={SoldNotes} />}</div>,
-    },
-    {
-      path: "/BuyRequest",
-      element: <div><Navigation />{<Protected Component={BuyRequest} />}</div>,
-    },
-    {
-      path: "/adminDashboard",
-      element: <div><Navigation />{<Protected Component={AdminDashboard} />}</div>,
-    },
-    {
-      path: "/downloadNotes/:id",
-      element: <div><Navigation />{<Protected Component={DownloadNotes} />}</div>,
-    },
-    {
-      path: "/alldownloadNotes",
-      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px',color: '#734dc4', fontSize: '30px' }}>Downloaded Notes</h1>{<Protected Component={DownloadNotes} />}</div>,
-    },
-    {
-      path: "/underReview",
-      element: <div><Navigation />{<Protected Component={UnderReview} />}</div>,
-    },
-    {
-      path: "/publishNotes",
-      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px',color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>{<Protected Component={AllPublishNotes} />}</div>,
-    },
-    {
-      path: "/rejectedNotes",
-      element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '245px',color: '#734dc4', fontSize: '30px' }}>Rejected Notes</h1>{<Protected Component={RejectedNotes} />}</div>,
-    }
-  
-  ]);
-  export default router
+  {
+    path: "/",
+    element: <div><Navigation /><Home /> </div>,
+  },
+  {
+    path: "/faq",
+    element: <div><Navigation />{<Protected Component={Faq} access={true} />}</div>,
+  },
+  {
+    path: "/login",
+    element: <div><Navigation /><Login /></div>,
+  },
+  {
+    path: "/register",
+    element: <div><Navigation /><Register /></div>,
+  },
+  {
+    path: "/searchNote",
+    element: <div><Navigation /><SearchNote /></div>,
+  },
+  {
+    path: "/contactUs",
+    element: <div><Navigation />{<Protected Component={ContactUs} />}</div>,
+  },
+  {
+    path: "/changePassword",
+    element: <div><Navigation />{<Protected Component={ChangePassword} />}</div>,
+  },
+  {
+    path: "/forgotPassword",
+    element: <div><Navigation /><ForgotPassword /></div>,
+  },
+  {
+    path: "/userprofile",
+    element: <div><Navigation />{<Protected Component={UserProfile} />}</div>,
+  },
+  {
+    path: "/addNotes",
+    element: <div><Navigation />{<Protected Component={AddNotes} />}</div>,
+  },
+  {
+    path: "/sellNotes",
+    element: <div><Navigation />{<Protected Component={SellNotes} />}</div>,
+  },
+  {
+    path: "/editNotes/:id",
+    element: <div><Navigation />{<Protected Component={EditNotes} />}</div>,
+  },
+  {
+    path: "/viewNotes/:id",
+    element: <div><Navigation /><ViewNotes /></div>,
+  },
+  {
+    path: "/downloadNotes",
+    element: <div><Navigation />{<Protected Component={MyDownload} />}</div>,
+  },
+  {
+    path: "/soldNotes",
+    element: <div><Navigation />{<Protected Component={SoldNotes} />}</div>,
+  },
+  {
+    path: "/BuyRequest",
+    element: <div><Navigation />{<Protected Component={BuyRequest} />}</div>,
+  },
+  {
+    path: "/adminDashboard",
+    element: <div><Navigation />{<Protected Component={AdminDashboard} />}</div>,
+  },
+  {
+    path: "/downloadNotes/:id",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Downloaded Notes</h1>{<Protected Component={DownloadNotes} />}</div>,
+  },
+  {
+    path: "/alldownloadNotes",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Downloaded Notes</h1>{<Protected Component={DownloadNotes} />}</div>,
+  },
+  {
+    path: "/underReview",
+    element: <div><Navigation />{<Protected Component={UnderReview} />}</div>,
+  },
+  {
+    path: "/underReview/:email",
+    element: <div><Navigation />{<Protected Component={UnderReview} />}</div>,
+  },
+  {
+    path: "/publishNotes",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>{<Protected Component={AllPublishNotes} />}</div>,
+  },
+  {
+    path: "/publishNotes/:email",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Publish Notes</h1>{<Protected Component={AllPublishNotes} />}</div>,
+  },
+  {
+    path: "/rejectedNotes",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '245px', color: '#734dc4', fontSize: '30px' }}>Rejected Notes</h1>{<Protected Component={RejectedNotes} />}</div>,
+  },
+  {
+    path: "/member",
+    element: <div style={{ paddingTop: "100px" }}><Navigation /><h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Members</h1>{<Protected Component={Member} />}</div>,
+  },
+  {
+    path: "/memberDetail/:email",
+    element: <div><Navigation />{<Protected Component={MemberDetails} />}</div>,
+  },
+  {
+    path: "/administrator",
+    element: <div><Navigation />{<Protected Component={Administrator} />}</div>,
+  },
+  {
+    path: "/addadministrator",
+    element: <div><Navigation />{<Protected Component={AddAdministrator} />}</div>,
+  },
+  {
+    path: "/editadministrator/:email",
+    element: <div><Navigation />{<Protected Component={EditAdministrator} />}</div>,
+  },
+  {
+    path: "/lookup",
+    element: <div><Navigation />{<Protected Component={Lookup} />}</div>,
+  },
+  {
+    path: "/addlookup",
+    element: <div><Navigation />{<Protected Component={AddLookup} />}</div>,
+  },
+  {
+    path: "/editlookup/:typeId",
+    element: <div><Navigation />{<Protected Component={EditLookup} />}</div>,
+  },
+  {
+    path: "/verify-email/:token",
+    element: <div><Navigation /><VerifyEmail /></div>,
+  },
+
+]);
+export default router

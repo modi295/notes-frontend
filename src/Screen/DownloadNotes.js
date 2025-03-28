@@ -7,7 +7,7 @@ function DownloadNotes() {
     const navigate = useNavigate();
     const { id } = useParams();
     const columns = [
-        { name: "S.NO", selector: (row, index) => index + 1, width: '80px', center: true },
+        { name: "S.NO", selector: (row, index) => index + 1, width: '80px', center: "true" },
         {
             name: "TITLE",
             selector: (row) => (
@@ -53,37 +53,40 @@ function DownloadNotes() {
     const [selectedNoteTitle, setSelectedNoteTitle] = useState('');
     const [filter, setFilter] = useState([]);
 
-    const fetchData = async () => {
-        try {
-
-            const url = id && id !== "null" && id !== "undefined"
-            ? `http://localhost:5000/api/downloadnotesbyId/${id}` 
-            : `http://localhost:5000/api/downloadnotes`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            setData([]);
-            setFilter([]);
-        }
-    };
 
     const handleView = (noteId) => {
         navigate(`/viewNotes/${noteId}`);
     };
 
     useEffect(() => {
+        const fetchData = async () => { // Moved fetchData inside useEffect
+            try {
+                let url = "http://localhost:5000/api/downloadnotes";
+                if (id) {
+                    if (id.includes("@")) {
+                        url = `http://localhost:5000/api/downloadnotesbyemail/${id}`;
+                    } else {
+                        url = `http://localhost:5000/api/downloadnotesbyId/${id}`;
+                    }
+                }
+                const req = await fetch(url);
+                const res = await req.json();
+                if (Array.isArray(res)) {
+                    setData(res);
+                    setFilter(res);
+                } else {
+                    setData([]);
+                    setFilter([]);
+                    console.warn('No data available:', res.message || 'Unexpected response format');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                setData([]);
+                setFilter([]);
+            }
+        };
         fetchData();
-    }, []);
+    }, [id]);
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -122,30 +125,30 @@ function DownloadNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', width: '100%' }}>
-                                    <div className="input-group" style={{ width: '600px',gap: '10px' }}>
-                                    <select className='form-control w-25' value={selectedSeller} onChange={(e) => setSelectedSeller(e.target.value)}>
-                                        <option value=''>Sellers</option>
-                                        {distinctSellers.map((seller, index) => (
-                                            <option key={index} value={seller}>{seller}</option>
-                                        ))}
-                                    </select>
-                                    <select className='form-control w-25' value={selectedBuyer} onChange={(e) => setSelectedBuyer(e.target.value)}>
-                                        <option value=''>Buyers</option>
-                                        {distinctBuyers.map((buyer, index) => (
-                                            <option key={index} value={buyer}>{buyer}</option>
-                                        ))}
-                                    </select>
-                                    <select className='form-control w-25' value={selectedNoteTitle} onChange={(e) => setSelectedNoteTitle(e.target.value)}>
-                                        <option value=''>Note Titles</option>
-                                        {distinctNoteTitles.map((noteTitle, index) => (
-                                            <option key={index} value={noteTitle}>{noteTitle}</option>
-                                        ))}
-                                    </select>
+                                    <div className="input-group" style={{ width: '600px', gap: '10px' }}>
+                                        <select className='form-control w-25' value={selectedSeller} onChange={(e) => setSelectedSeller(e.target.value)}>
+                                            <option value=''>Sellers ▼</option>
+                                            {distinctSellers.map((seller, index) => (
+                                                <option key={index} value={seller}>{seller}</option>
+                                            ))}
+                                        </select>
+                                        <select className='form-control w-25' value={selectedBuyer} onChange={(e) => setSelectedBuyer(e.target.value)}>
+                                            <option value=''>Buyers ▼</option>
+                                            {distinctBuyers.map((buyer, index) => (
+                                                <option key={index} value={buyer}>{buyer}</option>
+                                            ))}
+                                        </select>
+                                        <select className='form-control w-25' value={selectedNoteTitle} onChange={(e) => setSelectedNoteTitle(e.target.value)}>
+                                            <option value=''>Note Titles ▼</option>
+                                            {distinctNoteTitles.map((noteTitle, index) => (
+                                                <option key={index} value={noteTitle}>{noteTitle}</option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <input type='text' className='w-25 form-control' placeholder='Search...' value={search} onChange={(e) => setSearch(e.target.value)} />
                                 </div>
-                               
+
                             }
                         />
                     </div>

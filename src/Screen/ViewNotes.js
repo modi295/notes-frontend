@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../Services/api';
-import { isLoggedIn } from '../Services/auth';
+import { getUserEmail, isLoggedIn } from '../Services/auth';
 import { useNavigate } from 'react-router-dom';
+//const CryptoJS = require('crypto-js'); 
 
 function ViewNotes() {
     const { id } = useParams();
     const [note, setNote] = useState(null);
 
     const navigate = useNavigate();
-  
+
     const postBuyerNote = async (note) => {
         try {
-            const email = localStorage.getItem('email'); 
+            const email = getUserEmail();
             const data = {
                 email,
                 noteId: note.id,
@@ -23,14 +24,15 @@ function ViewNotes() {
                 purchaseEmail: note.email,
                 buyerEmail: email
             };
-            
-            console.log("Buyer Note Data: ", data); // Log the data being sent
-    
+
+            console.log("Buyer Note Data: ", data);
+
             const response = await api.post('/buyernotes', data);
-    
+
             if (response.data.success) {
+                // Initiate PayU payment here
+                //initiatePayUPayment(note.sellPrice, note.noteTitle); 
                 alert('Please complete the payment to access the notes. Once the payment is successful, the notes will be available for download in your account.');
-                // Proceed to download or other actions
             } else {
                 alert('There was an error with your purchase. Please try again.');
             }
@@ -39,11 +41,64 @@ function ViewNotes() {
             alert('An error occurred while processing your request.');
         }
     };
-    
+
+    // const initiatePayUPayment = (amount, productInfo) => {
+    //     const key = 'YOUR_MERCHANT_KEY';
+    //     const salt = 'YOUR_SALT'; 
+    //     const txnid = generateTxnId();
+    //     const firstname = getUserEmail().split('@')[0]; 
+    //     const email = getUserEmail();
+    //     const productinfo = productInfo;
+    //     const phone = '9988776633';
+    //     const surl = `${window.location.origin}/payment-success`; 
+    //     const furl = `${window.location.origin}/payment-failure`; 
+
+    //     const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+        
+    //     const hash = calculateHash(hashString); 
+
+    //     // Create form and submit to PayU
+    //     const form = document.createElement('form');
+    //     form.action = 'https://test.payu.in/_payment'; 
+    //     form.method = 'POST';
+
+    //     const fields = {
+    //         key: key,
+    //         txnid: txnid,
+    //         amount: amount,
+    //         productinfo: productinfo,
+    //         firstname: firstname,
+    //         email: email,
+    //         phone: phone,
+    //         surl: surl,
+    //         furl: furl,
+    //         hash: hash
+    //     };
+
+    //     for (const key in fields) {
+    //         const hiddenField = document.createElement('input');
+    //         hiddenField.type = 'hidden';
+    //         hiddenField.name = key;
+    //         hiddenField.value = fields[key];
+    //         form.appendChild(hiddenField);
+    //     }
+
+    //     document.body.appendChild(form);
+    //     form.submit();
+    // };
+
+    // const generateTxnId = () => {
+    //     return 'TXN' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // };
+
+    // const calculateHash = (hashString) => {
+    //     return CryptoJS.SHA512(hashString).toString(CryptoJS.enc.Hex);
+    // };
+
     const postDownloadNote = async (note) => {
         try {
-            const email = localStorage.getItem('email'); 
-            
+            const email = getUserEmail();
+
             const data = {
                 email,
                 noteId: note.id,
@@ -51,26 +106,26 @@ function ViewNotes() {
                 category: note.category,
                 sellFor: note.sellFor,
                 sellPrice: note.sellPrice,
-                purchaseEmail:note.email,
+                purchaseEmail: note.email,
                 buyerEmail: email
             };
-            
+
             if (note.sellPrice > 0) {
                 data.PurchaseTypeFlag = 'U';
             }
-    
+
             console.log("Download Note Data: ", data); // Log the data being sent
-    
+
             await api.post('/downloadnotes', data);
         } catch (error) {
             console.error(error);
             alert('An error occurred while processing your request.');
         }
     };
-    
+
     const postSoldNote = async (note) => {
         try {
-            const email = localStorage.getItem('email'); 
+            const email = getUserEmail();
             const data = {
                 email,
                 noteId: note.id,
@@ -78,19 +133,19 @@ function ViewNotes() {
                 category: note.category,
                 sellFor: note.sellFor,
                 sellPrice: note.sellPrice,
-                purchaseEmail:note.email,
+                purchaseEmail: note.email,
                 buyerEmail: email
             };
-            
+
             console.log("Sold Note Data: ", data); // Log the data being sent
-    
+
             await api.post('/soldnotes', data);
         } catch (error) {
             console.error(error);
             alert('An error occurred while processing your request.');
         }
     };
-    
+
     const handleDownloadClick = () => {
         if (!isLoggedIn()) {
             navigate('/login');
@@ -138,7 +193,7 @@ function ViewNotes() {
                         <h1 style={{ color: '#734dc4', fontSize: '40px' }} >{note.noteTitle}</h1>
                         <h4 style={{ color: '#734dc4', fontSize: '18px' }}>{note.category}</h4>
                         <p><strong>Description:</strong>{note.notesDescription}</p>
-                        <button className="btn btn-sm"  onClick={handleDownloadClick} style={{ backgroundColor: '#734dc4', color: 'white' }}>DOWNLOAD/${note.sellPrice}</button>
+                        <button className="btn btn-sm" onClick={handleDownloadClick} style={{ backgroundColor: '#734dc4', color: 'white' }}>DOWNLOAD/${note.sellPrice}</button>
                     </div>
                     <div className="col-md-2" style={{ paddingLeft: 60 }}>
                         <p>Institution</p>

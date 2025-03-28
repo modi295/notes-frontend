@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import '../css/allPublishNotes.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 function AllPublishNotes() {
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ function AllPublishNotes() {
     const [unpublishId, setUnpublishId] = useState(null);
     const [remark, setRemark] = useState('');
     const [selectedNote, setSelectedNote] = useState({ title: '', category: '' });
-
+    const { id } = useParams();
 
     const columns = [
         {
@@ -88,13 +88,14 @@ function AllPublishNotes() {
         {
             name: "ACTION",
             cell: (row) => (
-                <div 
+                <div
                     style={{ position: 'relative', cursor: 'pointer' }}
                     onMouseEnter={() => setActiveDropdown(row.id)}
                     onMouseLeave={() => setActiveDropdown(null)}
                 >
                     <img
                         src="dots.png"
+                        alt="Action"
                         style={{ cursor: 'pointer' }}
                     />
                     {activeDropdown === row.id && (
@@ -109,19 +110,19 @@ function AllPublishNotes() {
                             zIndex: 10
                         }}>
                             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleDownload(row.notesAttachmentP)}
                                 >
                                     Download Notes
                                 </li>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
                                     onClick={() => handleView(row.id)}
                                 >
                                     View Details
                                 </li>
-                                <li 
+                                <li
                                     style={{ padding: '10px', cursor: 'pointer' }}
                                     onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}
                                 >
@@ -141,28 +142,7 @@ function AllPublishNotes() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState([]);
 
-    const fetchData = async () => {
-        try {
-            const url = `http://localhost:5000/api/allpublishNotes`;
-            const req = await fetch(url);
-            const res = await req.json();
 
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-                const publishers = [...new Set(res.map(item => item.userFullName))];
-                setDistinctPublishers(publishers);
-            } else {
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            setData([]);
-            setFilter([]);
-        }
-    };
 
 
     const handleView = (id) => {
@@ -177,7 +157,7 @@ function AllPublishNotes() {
             return;
         }
         const link = document.createElement("a");
-        link.href = filePath; 
+        link.href = filePath;
         link.setAttribute("download", "");
         document.body.appendChild(link);
         link.click();
@@ -212,7 +192,7 @@ function AllPublishNotes() {
                 remark: remark.trim()
             };
 
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotes/${unpublishId}`, {
+            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedNoteData)
@@ -232,10 +212,38 @@ function AllPublishNotes() {
             alert('Error updating status.');
         }
     };
-  
+
     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                let url = `http://localhost:5000/api/allpublishNotes`;
+                if (id) {
+                    if (id.includes("@")) {
+                        url = `http://localhost:5000/api/publishNotes/${id}`;
+                    }
+                }
+                const req = await fetch(url);
+                const res = await req.json();
+
+                if (Array.isArray(res)) {
+                    setData(res);
+                    setFilter(res);
+                    const publishers = [...new Set(res.map(item => item.userFullName))];
+                    setDistinctPublishers(publishers);
+                } else {
+                    setData([]);
+                    setFilter([]);
+                    console.warn('No data available:', res.message || 'Unexpected response format');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                setData([]);
+                setFilter([]);
+            }
+        };
+
         fetchData();
-    }, []);
+    }, [id]);
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -280,10 +288,12 @@ function AllPublishNotes() {
                                                 backgroundSize: '10px',
                                             }}
                                         >
-                                            <option value=''>Sellers</option>
+                                            <option value=''>Sellers ▼</option>
                                             {distinctPublishers.map((publisher, index) => (
                                                 <option key={index} value={publisher}>{publisher}</option>
                                             ))}
+                                            <img src="/arrow-down.png" alt="Arrow Down Icon" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '15px', height: '15px', zIndex: '1' }} />
+
                                         </select>
                                     </div>
 
@@ -306,8 +316,8 @@ function AllPublishNotes() {
                     <div className="modal-container">
                         <h4>{selectedNote.title} - {selectedNote.category}</h4>
                         <label>Remarks</label>
-                        <textarea 
-                            className="form-control" 
+                        <textarea
+                            className="form-control"
                             placeholder="Write remarks..."
                             maxLength="200"
                             value={remark}

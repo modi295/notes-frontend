@@ -11,6 +11,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
 .banner {
   position: relative;
   width: 100%;
@@ -32,14 +33,17 @@ code {
   font-size: 2em;
   z-index: 2;
 }
+
 .banner::after {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%; /* Adjust to 100% for full width gradient */
+  width: 100%;
+  /* Adjust to 100% for full width gradient */
   height: 100%;
-  background: linear-gradient(to right, rgba(115, 77, 196, 0.8) 0%, rgba(115, 77, 196, 0.3) 100%); /* Gradient definition */
+  background: linear-gradient(to right, rgba(115, 77, 196, 0.8) 0%, rgba(115, 77, 196, 0.3) 100%);
+  /* Gradient definition */
   z-index: 1;
 }
 
@@ -58,11 +62,11 @@ code {
 
 .right-column {
   width: 50%;
-  padding-left: 20px; 
+  padding-left: 20px;
 }
 
 .p-text {
- color: #734dc4;
+  color: #734dc4;
 }
 
 .c-text {
@@ -70,16 +74,16 @@ code {
   text-align: center;
   padding-top: 10px;
   padding-bottom: 10px;
- }
- 
- .faq-text {
+}
+
+.faq-text {
   color: #734dc4;
   margin-left: 270px;
   padding-top: 10px;
   font-size: large;
- }
- 
- .border-row {
+}
+
+.border-row {
   border-bottom: 1px solid #ddd;
   padding-bottom: 15px;
 }
@@ -98,19 +102,25 @@ code {
 }
 
 .product-card {
-  width: 32%; /* Adjust width based on your design */
+  width: 32%;
+  /* Adjust width based on your design */
   margin-bottom: 20px;
-  border: 1px solid #ddd; /* Add border style and color */
-  padding: 10px; /* Add padding for spacing */
+  border: 1px solid #ddd;
+  /* Add border style and color */
+  padding: 10px;
+  /* Add padding for spacing */
 }
+
 .pagination-container {
-  display: flex; /* Use flexbox for centering */
+  display: flex;
+  /* Use flexbox for centering */
   justify-content: center;
-  margin-top: 20px; /* Add some margin for spacing */
+  margin-top: 20px;
+  /* Add some margin for spacing */
 }
 
 .product-info {
-  text-align: left; /* Align text to the left */
+  text-align: left;
+  /* Align text to the left */
   padding-left: 10px;
 }
-

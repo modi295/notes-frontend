@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 function UnderReview() {
     const navigate = useNavigate();
@@ -12,6 +12,7 @@ function UnderReview() {
     const [unpublishId, setUnpublishId] = useState(null);
     const [remark, setRemark] = useState('');
     const [selectedNote, setSelectedNote] = useState({ title: '', category: '' });
+    const { id } = useParams();
 
     const columns = [
         {
@@ -83,7 +84,7 @@ function UnderReview() {
             cell: (row) => (
                 <div style={{ display: 'flex', gap: '5px' }}>
                     <button style={{ backgroundColor: 'green', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }} onClick={() => updateStatus(row.id, 'P')}>Approve</button>
-                    <button style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }}  onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}>Reject</button>
+                    <button style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }} onClick={() => openUnpublishModal(row.id, row.noteTitle, row.category)}>Reject</button>
                     <button style={{ backgroundColor: 'gray', color: 'white', border: 'none', padding: '5px', cursor: 'pointer' }} onClick={() => updateStatus(row.id, 'I')}>In Review</button>
                 </div>
             ),
@@ -140,35 +141,8 @@ function UnderReview() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState([]);
 
-    const fetchData = async () => {
-        try {
-            const url = `http://localhost:5000/api/underReviewNotes`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-                const publishers = [...new Set(res.map(item => item.userFullName))];
-                setDistinctPublishers(publishers);
-            } else {
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            setData([]);
-            setFilter([]);
-        }
-    };
-
-
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
-    };
-    const handleView2 = (id) => {
-        navigate(`/downloadNotes/${id}`);
     };
     const handleDownload = (filePath) => {
         if (!filePath) {
@@ -210,11 +184,11 @@ function UnderReview() {
 
             const noteData = await noteResponse.json();
             const updatedNoteData = {
-                ...noteData, 
-                publishFlag: status 
+                ...noteData,
+                publishFlag: status
             };
-
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotes/${id}`, {
+            console.log(updatedNoteData);
+            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedNoteData) // Sending all data with updated publishFlag
@@ -261,7 +235,7 @@ function UnderReview() {
                 remark: remark.trim()
             };
 
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotes/${unpublishId}`, {
+            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedNoteData)
@@ -283,8 +257,36 @@ function UnderReview() {
     };
 
     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                let url = `http://localhost:5000/api/underReviewNotes`;
+                if (id) {
+                    if (id.includes("@")) {
+                        url = `http://localhost:5000/api/underReviewNotes/${id}`;
+                    }
+                }
+                const req = await fetch(url);
+                const res = await req.json();
+
+                if (Array.isArray(res)) {
+                    setData(res);
+                    setFilter(res);
+                    const publishers = [...new Set(res.map(item => item.userFullName))];
+                    setDistinctPublishers(publishers);
+                } else {
+                    setData([]);
+                    setFilter([]);
+                    console.warn('No data available:', res.message || 'Unexpected response format');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                setData([]);
+                setFilter([]);
+            }
+        };
+
         fetchData();
-    }, []);
+    }, [id]);
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -303,7 +305,7 @@ function UnderReview() {
 
     return (
         <div style={{ paddingTop: '100px' }}>
-            <h1 style={{ marginLeft: '161px', marginBottom: '0', marginBottom:'10px',color: '#734dc4', fontSize: '30px' }}>Notes Under Review</h1>
+            <h1 style={{ marginLeft: '161px', marginBottom: '10px', color: '#734dc4', fontSize: '30px' }}>Notes Under Review</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -335,6 +337,8 @@ function UnderReview() {
                                                 <option key={index} value={publisher}>{publisher}</option>
                                             ))}
                                         </select>
+                                        <img src="/arrow-down.png" alt="Arrow Down Icon" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '15px', height: '15px', zIndex: '1' }} />
+
                                     </div>
 
                                     <input
@@ -356,8 +360,8 @@ function UnderReview() {
                     <div className="modal-container">
                         <h4>{selectedNote.title} - {selectedNote.category}</h4>
                         <label>Remarks</label>
-                        <textarea 
-                            className="form-control" 
+                        <textarea
+                            className="form-control"
                             placeholder="Write remarks..."
                             maxLength="200"
                             value={remark}

@@ -44,7 +44,7 @@ const peopleList = () => {
           <div className="col" key={person.name}>
             {personCard(person)}
           </div>
-          
+
         ))}
       </div>
     </div>
