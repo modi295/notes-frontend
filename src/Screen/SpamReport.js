@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
-import { getUserEmail } from '../Services/auth';
 import api from '../Services/api';
+import { ToastContainer } from 'react-toastify';
+import { showConfirm } from '../Utility/ConfirmBox'; 
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
 
-
-function SoldNotes() {
+function SpamReport() {
     const navigate = useNavigate();
     const columns = [
         {
@@ -14,6 +15,12 @@ function SoldNotes() {
             selector: (row, index) => index + 1,
             sortable: false,
             width: '100px'
+        },
+        {
+            name: "Reproted By",
+            selector: (row) => row.buyerName,
+            sortable: true,
+            width: '160px'
         },
         {
             name: "NOTE TITLE",
@@ -26,43 +33,33 @@ function SoldNotes() {
                 </span>
             ),
             sortable: true,
-            width: '200px'
+            width: '160px'
         },
         {
-            name: "CATEGORY",
+            name: "CATAGORY",
             selector: (row) => row.category,
             sortable: true,
-            width: '190px'
-        },
-        {
-            name: "Buyer",
-            selector: (row) => row.buyerEmail,
-            sortable: true,
-            width: '200px'
-        },
-        {
-            name: "SELL TYPE",
-            selector: (row) => row.sellFor,
-            sortable: true,
             width: '130px'
         },
         {
-            name: "PRICE",
-            selector: (row) => `$${row.sellPrice}`,
-            sortable: true,
-            width: '130px'
-        },
-        {
-            name: "ADDED DATE",
+            name: "DATE EDITED",
             selector: (row) => {
-                const createdAt = new Date(row.createdAt);
+                const createdAt = new Date(row.updatedAt);
                 const day = createdAt.getDate().toString().padStart(2, '0');
                 const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
                 const year = createdAt.getFullYear();
-                return `${day}-${month}-${year}`;
+                const hours = createdAt.getHours().toString().padStart(2, '0');
+                const minutes = createdAt.getMinutes().toString().padStart(2, '0');
+                return `${day}-${month}-${year} ${hours}:${minutes}`;
             },
             sortable: true,
-            width: '190px'
+            width: '160px'
+        },
+        {
+            name: "REMARK",
+            selector: (row) => row.ReportRemark,
+            sortable: true,
+            width: '210px'
         },
         {
             name: "ACTION",
@@ -70,10 +67,10 @@ function SoldNotes() {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
                     <img
-                        src="eye.png"
-                        alt="Edit"
-                        title="View"
-                        onClick={() => handleView(row.noteId)}
+                        src="delete.png"
+                        alt="Delete"
+                        title="Delete"
+                        onClick={() => handleDeleteReview(row.id)}
                         style={{ cursor: 'pointer', marginRight: '9px' }}
                     />
                 </div>
@@ -89,17 +86,14 @@ function SoldNotes() {
 
     const fetchData = async () => {
         try {
-            const email = getUserEmail();
-            const response = await api.get(`/soldnotes/${email}`);
+            const response = await api.get('/reportednotes');
     
-            if (Array.isArray(response.data)) {
-                setData(response.data);
-                setFilter(response.data);
-            } else {
-                // Handle cases where the response contains a message instead of an array
+            if (response.data.message) {
                 setData([]);
                 setFilter([]);
-                console.warn('No data available:', response.data.message || 'Unexpected response format');
+            } else {
+                setData(response.data);
+                setFilter(response.data);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -108,6 +102,28 @@ function SoldNotes() {
         }
     };
     
+    const handleDeleteReview = async (downloadNoteId) => {
+        const confirmed = await showConfirm("Do you really want to delete this report?");
+        if (!confirmed) return;
+            try {
+                const response = await api.put(`/downloadNote/${downloadNoteId}`, {
+                    ReportRemark: null,
+                });
+    
+                if (response.data.success) {
+                    showSuccessToast('Report deleted successfully');
+                    fetchData();
+                } else {
+                    showErrorToast('Failed to delete Report.');
+
+                    console.error('Failed to delete Report:', response.data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting Report:', error);
+                showErrorToast('An error occurred while deleting the Report.');
+            }
+        
+    };
 
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
@@ -119,11 +135,10 @@ function SoldNotes() {
     useEffect(() => {
         const result = data.filter(item => {
             const titleMatch = item.noteTitle.toLowerCase().includes(search.toLowerCase());
-            const buyerEmail = item.buyerEmail.toLowerCase().includes(search.toLowerCase());
             const categoryMatch = item.category.toLowerCase().includes(search.toLowerCase());
-            const sellTypeMatch = item.sellFor.toLowerCase().includes(search.toLowerCase());
-            const priceMatch = item.sellPrice.toString().includes(search.toLowerCase()); // Assuming price is a string
-            return titleMatch || categoryMatch || sellTypeMatch || priceMatch||buyerEmail;
+            const ReportRemarkMatch = item.ReportRemark.toLowerCase().includes(search.toLowerCase());
+            const buyerNameMatch = item.buyerName.toString().includes(search.toLowerCase()); // Assuming price is a string
+            return titleMatch || categoryMatch || ReportRemarkMatch || buyerNameMatch;
         });
         setFilter(result);
     }, [data, search]);
@@ -147,7 +162,7 @@ function SoldNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>My Sold Notes</h1>
+                                    <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>Spam Reports</h1>
                                     <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
                                 </div>
                             }
@@ -155,8 +170,9 @@ function SoldNotes() {
                     </div>
                 </div>
             </div>
+            <ToastContainer />
         </div>
     );
 }
 
-export default SoldNotes;
+export default SpamReport;

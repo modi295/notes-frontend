@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../Services/api';
-import { toast,ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+
 
 const EditLookup = () => {
   const { typeId } = useParams();
@@ -26,10 +28,7 @@ const EditLookup = () => {
         const response = await api.get(`/getLookupById/${typeId}`);
         setLookup(response.data);
       } catch (error) {
-        toast.error('Failed to fetch lookup details.', {
-          position: 'bottom-right',
-          autoClose: 3000,
-        });
+        showErrorToast('Failed to fetch lookup details.');
       }
     };
     fetchLookup();
@@ -62,19 +61,13 @@ const EditLookup = () => {
         typeName: lookup.typeName
       });
 
-      toast.success('Lookup updated successfully', {
-        position: 'bottom-right',
-        autoClose: 3000,
-      });
+      showSuccessToast('Lookup updated successfully');
 
       setTimeout(() => {
         navigate(`/lookup`);
       }, 4000);
     } catch (error) {
-      toast.error('Failed to update lookup. Please try again.', {
-        position: 'bottom-right',
-        autoClose: 3000,
-      });
+      showErrorToast('Failed to update lookup. Please try again.');
     }
   };
 

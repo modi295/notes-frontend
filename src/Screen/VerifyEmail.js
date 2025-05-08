@@ -9,7 +9,7 @@ const VerifyEmail = () => {
   const handleVerify = async () => {
     try {
       const response = await api.post(`verifyEmail/${token}`);
-      setMessage(response.data); // Show success message
+      setMessage(response.data); 
     } catch (error) {
       setMessage(error.response?.data || "Verification failed. Try again.");
     }

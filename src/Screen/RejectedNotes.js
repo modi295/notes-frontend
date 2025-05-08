@@ -3,6 +3,13 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import '../css/allPublishNotes.css';
 import { useNavigate } from 'react-router-dom';
+import api from '../Services/api';
+import { showAlert, showConfirm } from '../Utility/ConfirmBox';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
 
 function RejectedNotes() {
     const navigate = useNavigate();
@@ -124,19 +131,17 @@ function RejectedNotes() {
 
     const fetchData = async () => {
         try {
-            const url = `http://localhost:5000/api/rejectedNotes`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-                const publishers = [...new Set(res.map(item => item.userFullName))];
+            const response = await api.get('/rejectedNotes');
+    
+            if (Array.isArray(response.data)) {
+                setData(response.data);
+                setFilter(response.data);
+                const publishers = [...new Set(response.data.map(item => item.userFullName))];
                 setDistinctPublishers(publishers);
             } else {
                 setData([]);
                 setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
+                console.warn('No data available:', response.data.message || 'Unexpected response format');
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -149,17 +154,26 @@ function RejectedNotes() {
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
     };
-    const handleDownload = (filePath) => {
-        if (!filePath) {
-            alert("No attachment available for download");
-            return;
+    const handleDownload = async (fileUrlsString) => {
+        const confirmed = await showConfirm("Do you really want to download this Note?");
+        if (!confirmed) return;
+
+        try {
+            const zip = new JSZip();
+            const urls = fileUrlsString.split(',');
+
+            for (const fileUrl of urls) {
+                const response = await api.get(fileUrl.trim(), { responseType: 'blob' });
+                const fileName = fileUrl.split('/').pop();
+                zip.file(fileName, response.data);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'NotesBundle.zip');
+        } catch (error) {
+            console.error("Download error:", error);
+            showErrorToast('Could not download the ZIP file.');
         }
-        const link = document.createElement("a");
-        link.href = filePath;
-        link.setAttribute("download", "");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
     const openUnpublishModal = (id, title, category) => {
         setUnpublishId(id);
@@ -175,39 +189,34 @@ function RejectedNotes() {
 
     const updateStatus = async () => {
         if (!remark.trim()) {
-            alert("Please enter a remark before Approve.");
+            showAlert("Please enter a remark before Approve.", "info");
             return;
         }
-
+    
         try {
-            const noteResponse = await fetch(`http://localhost:5000/api/notesById/${unpublishId}`);
-            if (!noteResponse.ok) throw new Error('Failed to fetch the note data');
-
-            const noteData = await noteResponse.json();
+            const noteResponse = await api.get(`/notesById/${unpublishId}`);
+            const noteData = noteResponse.data;
+    
             const updatedNoteData = {
                 ...noteData,
                 publishFlag: 'P',
                 remark: remark.trim()
             };
-
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedNoteData)
-            });
-
-            if (updateResponse.ok) {
+    
+            const updateResponse = await api.put(`/updateNotesStatus/${unpublishId}`, updatedNoteData);
+    
+            if (updateResponse.status === 200) {
                 setData(prevData => prevData.map(note =>
                     note.id === unpublishId ? { ...note, publishFlag: 'P', remark: remark.trim() } : note
                 ));
-                alert(`Note Approve successfully.`);
+                showSuccessToast("Note Approve successfully!");
                 closeUnpublishModal();
             } else {
-                alert(`Failed to update status`);
+                showErrorToast("Failed to update status.");
             }
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Error updating status.');
+            showErrorToast("Error updating status.");
         }
     };
 
@@ -231,7 +240,8 @@ function RejectedNotes() {
 
 
     return (
-        <div style={{ paddingTop: '10px' }}>
+        <div style={{ paddingTop: '100px' }}>
+            <h1 style={{ marginLeft: '245px', color: '#734dc4', fontSize: '30px' }}>Rejected Notes</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -298,6 +308,7 @@ function RejectedNotes() {
                     </div>
                 </div>
             )}
+            <ToastContainer />
         </div>
     );
 }

@@ -3,6 +3,8 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 import { getUserEmail } from '../Services/auth';
+import api from '../Services/api';
+
 
 function PublishNotes() {
     const navigate = useNavigate();
@@ -68,26 +70,26 @@ function PublishNotes() {
 
     const fetchData = async () => {
         try {
-            const email = getUserEmail();
-            const url = `http://localhost:5000/api/publishNotes/${email}`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                // Handle cases where the response contains a message or is not an array
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
+          const email = getUserEmail();
+          const url = `/publishNotes/${email}`;
+          const response = await api.get(url);
+          const res = response.data;
+      
+          if (Array.isArray(res)) {
+            setData(res);
+            setFilter(res);
+          } else {
             setData([]);
             setFilter([]);
+            console.warn('No data available:', res.message || 'Unexpected response format');
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setData([]);
+          setFilter([]);
         }
-    };
+      };
+      
 
 
     const handleView = (id) => {
@@ -127,7 +129,7 @@ function PublishNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My publish Notes</h1>
+                                    <h1 style={{ marginRight: '450px', marginBottom: '0', color: '#734dc4', fontSize: '20px' }}>My Publish Notes</h1>
                                     <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
                                 </div>
                             }

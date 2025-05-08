@@ -1,123 +1,141 @@
 import React, { useState } from 'react';
+import { Box,Button,TextField,Typography,IconButton, InputAdornment,Paper,Container,Alert} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import api from '../Services/api';
-import '../css/Login.css';
 import { getUserEmail } from '../Services/auth';
 
 function ChangePassword() {
-    const [oldPassword, setOldPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showOldPassword, setShowOldPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [passwordsMatchError, setPasswordsMatchError] = useState(false);
-    const [passwordLengthError, setPasswordLengthError] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordsMatchError, setPasswordsMatchError] = useState(false);
+  const [passwordLengthError, setPasswordLengthError] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
-    const toggleOldPasswordVisibility = () => {
-        setShowOldPassword(!showOldPassword);
-    };
+  const strongPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])[^\s]{6,24}$/;
 
-    const toggleNewPasswordVisibility = () => {
-        setShowNewPassword(!showNewPassword);
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordLengthError(false);
+    setPasswordsMatchError(false);
 
-    const toggleConfirmPasswordVisibility = () => {
-        setShowConfirmPassword(!showConfirmPassword);
-    };
+    if (!strongPasswordRegex.test(newPassword)) {
+      setPasswordLengthError(true);
+      return;
+    }
 
-    const strongPasswordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])[^\s]{6,24}$/;
+    if (newPassword !== confirmPassword) {
+      setPasswordsMatchError(true);
+      return;
+    }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    try {
+      const email = getUserEmail();
+      await api.put('/changePassword', { email, oldPassword, newPassword });
+      setSuccessMessage('Password updated successfully');
+      setErrorMessage('');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      setErrorMessage('Error updating password: ' + (error.response?.data?.error || error.message));
+      setSuccessMessage('');
+    }
+  };
 
-        if (!strongPasswordRegex.test(newPassword)) {
-            setPasswordLengthError(true);
-            return;
-        }
+  const passwordField = (label, value, setValue, show, toggleShow) => (
+    <TextField
+      fullWidth
+      required
+      type={show ? 'text' : 'password'}
+      label={label}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      variant="outlined"
+      margin="normal"
+      inputProps={{ maxLength: 24 }}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end">
+            <IconButton onClick={toggleShow} edge="end">
+              {show ? <Visibility /> : <VisibilityOff />}
+            </IconButton>
+          </InputAdornment>
+        ),
+      }}
+    />
+  );
 
-        if (newPassword !== confirmPassword) {
-            setPasswordsMatchError(true);
-            return;
-        }
+  return (
+    <Box
+      sx={{
+        backgroundImage: 'url("/loginbg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+          <Paper elevation={4}sx={{p: 4, width: '80%' }}>
+            <Box display="flex" justifyContent="center" mb={2}>
+              <Box sx={{ backgroundColor: 'rgba(0, 0, 0, 0.1)', padding: 1, borderRadius: 1,display: 'inline-block',}} >
+                <img src="top-logo.png" alt="Logo"width="120" style={{ filter: 'brightness(0) saturate(100%) invert(23%) sepia(50%) saturate(800%) hue-rotate(240deg) brightness(90%) contrast(90%)'}}/>
+              </Box>
+            </Box>
+            <Typography variant="h5" align="center"gutterBottom  sx={{ color: '#734dc4' }} > Change Password </Typography>
+            <Typography variant="body2" align="center" mb={2}>Enter Old Password to change your password </Typography>
 
-        try {
-            const email = getUserEmail();
-            await api.put('/changePassword', { email, oldPassword, newPassword });
-            setSuccessMessage('Password updated successfully');
-            setErrorMessage('');
-            setPasswordsMatchError(false);
-            setOldPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-        } catch (error) {
-            setErrorMessage('Error updating password: ' + error.response.data.error);
-            setSuccessMessage('');
-        }
-    };
+            <Box mb={2}>
+              {successMessage && (
+                <Alert severity="success" onClose={() => setSuccessMessage('')}>
+                  {successMessage}
+                </Alert>
+              )}
+              {errorMessage && (
+                <Alert severity="error" onClose={() => setErrorMessage('')}>
+                  {errorMessage}
+                </Alert>
+              )}
+              {passwordLengthError && (
+                <Alert severity="warning" onClose={() => setPasswordLengthError(false)}>
+                  Password must be 6–24 characters with uppercase, lowercase, number, and special character.
+                </Alert>
+              )}
+              {passwordsMatchError && (
+                <Alert severity="error" onClose={() => setPasswordsMatchError(false)}>
+                  Passwords do not match!
+                </Alert>
+              )}
+            </Box>
 
-    return (
-        <div className="login-container">
-            <div className="row">
-                <div className="logo">
-                    <img src="top-logo.png" alt="Logo" />
-                </div>
-                <div className="col-md-12 d-flex justify-content-center align-items-center ">
-                    <div className="login-form">
-                        <div className="login-text">
-                            <h1 >Change Password</h1>
-                            <p >Enter Old Password to change Password</p>
-                        </div>
-                        {successMessage && (
-                            <p className="login-success">{successMessage}</p>
-                        )}
-                        {errorMessage && (
-                            <p className="error-message" style={{ color: 'red' }}>{errorMessage}</p>
-                        )}
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="oldPassword">Old Password<span className="required">*</span></label>
-                                <div className="password-container">
-                                    <input type={showOldPassword ? 'text' : 'password'} maxLength={24} value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} placeholder="Enter Old Password" className="form-control" required />
-                                    <i className={`fas fa-eye${showOldPassword ? '' : '-slash'}`} onClick={toggleOldPasswordVisibility}></i>
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newPassword">New Password<span className="required">*</span></label>
-                                <div className="password-container">
-                                    <input type={showNewPassword ? 'text' : 'password'} maxLength={24} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter New Password" className="form-control" required />
-                                    <i className={`fas fa-eye${showNewPassword ? '' : '-slash'}`} onClick={toggleNewPasswordVisibility}></i>
-                                </div>
-                                {passwordLengthError && (
-                                    <div className="error-message" style={{ color: 'red' }}>
-                                        Password must be at least 6 to 24 characters long with UpperCase, Lowercase, Number and Special Characters!
-                                    </div>
-                                )}
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="confirmPassword">Confirm New Password<span className="required">*</span></label>
-                                <div className="password-container">
-                                    <input type={showConfirmPassword ? 'text' : 'password'} maxLength={24} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm New Password" className="form-control" required />
-                                    <i className={`fas fa-eye${showConfirmPassword ? '' : '-slash'}`} onClick={toggleConfirmPasswordVisibility}></i>
-                                </div>
-                                {passwordsMatchError && (
-                                    <div className="error-message" style={{ color: 'red' }}>
-                                        Passwords do not match!
-                                    </div>
-                                )}
-                            </div>
-                            <button type="submit" className="btn-login">
-                                SUBMIT
-                            </button>
-                        </form>
+            <form onSubmit={handleSubmit}>
+              {passwordField('Old Password', oldPassword, setOldPassword,showOldPassword,() => setShowOldPassword(!showOldPassword))}
+              {passwordField( 'New Password', newPassword,  setNewPassword, showNewPassword, () => setShowNewPassword(!showNewPassword))}
+              {passwordField('Confirm New Password',confirmPassword,setConfirmPassword, showConfirmPassword, () => setShowConfirmPassword(!showConfirmPassword) )}
 
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    );
+              <Button fullWidth variant="contained" type="submit"
+                sx={{
+                  mt: 3,
+                  backgroundColor: '#734dc4',
+                  '&:hover': {
+                    backgroundColor: '#5e3ca8',
+                  },
+                }}
+              > Submit</Button>
+            </form>
+          </Paper>
+        </Box>
+      </Container>
+    </Box>
+  );
 }
 
 export default ChangePassword;

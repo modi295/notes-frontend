@@ -4,6 +4,7 @@ import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 import api from '../Services/api';
 import { getUserEmail } from '../Services/auth';
+import { showErrorToast } from '../Utility/ToastUtility'; 
 
 function BuyRequest() {
     const navigate = useNavigate();
@@ -107,26 +108,26 @@ function BuyRequest() {
 
     const fetchData = async () => {
         try {
-            const email = getUserEmail();
-            const url = `http://localhost:5000/api/buyernotes/${email}`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                // Handle cases where the response contains a message or is not an array
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
+          const email = getUserEmail();
+          const url = `/buyernotes/${email}`;
+          const response = await api.get(url);
+          const res = response.data;
+      
+          if (Array.isArray(res)) {
+            setData(res);
+            setFilter(res);
+          } else {
             setData([]);
             setFilter([]);
+            console.warn('No data available:', res.message || 'Unexpected response format');
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setData([]);
+          setFilter([]);
         }
-    };
+      };
+      
 
     const postDownloadNote = async (note) => {
         try {
@@ -152,7 +153,7 @@ function BuyRequest() {
             await api.post('/downloadnotes', data);
         } catch (error) {
             console.error(error);
-            alert('An error occurred while processing your request.');
+            showErrorToast('An error occurred while processing your request.');
         }
     };
 
@@ -175,7 +176,7 @@ function BuyRequest() {
             await api.post('/soldnotes', data);
         } catch (error) {
             console.error(error);
-            alert('An error occurred while processing your request.');
+            showErrorToast('An error occurred while processing your request.');
         }
     };
 
@@ -191,7 +192,7 @@ function BuyRequest() {
             console.log('Buyer note updated:', response.data);
         } catch (error) {
             console.error('Error updating buyer note:', error);
-            alert('Failed to update the buyer note.');
+            showErrorToast('Failed to update the buyer note.');
         }
     };
 

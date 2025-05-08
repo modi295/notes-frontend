@@ -4,10 +4,14 @@ import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 import { getUserEmail } from '../Services/auth';
 import api from '../Services/api';
+import { showConfirm } from '../Utility/ConfirmBox'; 
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { showErrorToast } from '../Utility/ToastUtility';
 
-
-function SoldNotes() {
+function MyRejectedNotes() {
     const navigate = useNavigate();
+    const [activeDropdown, setActiveDropdown] = useState(null);
     const columns = [
         {
             name: "SR NO.",
@@ -35,49 +39,52 @@ function SoldNotes() {
             width: '190px'
         },
         {
-            name: "Buyer",
-            selector: (row) => row.buyerEmail,
+            name: "REMARKS",
+            selector: (row) => row.remark,
             sortable: true,
             width: '200px'
         },
         {
-            name: "SELL TYPE",
-            selector: (row) => row.sellFor,
-            sortable: true,
-            width: '130px'
-        },
-        {
-            name: "PRICE",
-            selector: (row) => `$${row.sellPrice}`,
-            sortable: true,
-            width: '130px'
-        },
-        {
-            name: "ADDED DATE",
-            selector: (row) => {
-                const createdAt = new Date(row.createdAt);
-                const day = createdAt.getDate().toString().padStart(2, '0');
-                const month = (createdAt.getMonth() + 1).toString().padStart(2, '0');
-                const year = createdAt.getFullYear();
-                return `${day}-${month}-${year}`;
-            },
-            sortable: true,
-            width: '190px'
-        },
-        {
             name: "ACTION",
             cell: (row) => (
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
+                <div
+                    style={{ position: 'relative', cursor: 'pointer' }}
+                    onMouseEnter={() => setActiveDropdown(row.id)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                >
                     <img
-                        src="eye.png"
-                        alt="Edit"
-                        title="View"
-                        onClick={() => handleView(row.noteId)}
-                        style={{ cursor: 'pointer', marginRight: '9px' }}
+                        src="dots.png"
+                        alt="Action"
+                        style={{ cursor: 'pointer' }}
                     />
+                    {activeDropdown === row.id && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '20px',
+                            right: '0',
+                            background: '#fff',
+                            boxShadow: '0px 0px 5px rgba(0,0,0,0.2)',
+                            borderRadius: '5px',
+                            width: '150px',
+                            zIndex: 10
+                        }}>
+                            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                                <li
+                                    style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
+                                    onClick={() => handleDownload(row.notesAttachmentP)}
+                                >
+                                    Download Notes
+                                </li>
+                                <li
+                                    style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #ddd' }}
+                                    onClick={() => handleView(row.id)}
+                                >
+                                    View Details
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                 </div>
-
             ),
             width: '120px'
         }
@@ -90,16 +97,14 @@ function SoldNotes() {
     const fetchData = async () => {
         try {
             const email = getUserEmail();
-            const response = await api.get(`/soldnotes/${email}`);
+            const response = await api.get(`/rejectedNotesByEmail/${email}`);
     
-            if (Array.isArray(response.data)) {
-                setData(response.data);
-                setFilter(response.data);
-            } else {
-                // Handle cases where the response contains a message instead of an array
+            if (response.data.message) {
                 setData([]);
                 setFilter([]);
-                console.warn('No data available:', response.data.message || 'Unexpected response format');
+            } else {
+                setData(response.data);
+                setFilter(response.data);
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -109,8 +114,30 @@ function SoldNotes() {
     };
     
 
+
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
+    };
+    const handleDownload = async (fileUrlsString) => {
+        const confirmed = await showConfirm("Do you really want to download this Note?");
+        if (!confirmed) return;
+
+        try {
+            const zip = new JSZip();
+            const urls = fileUrlsString.split(',');
+
+            for (const fileUrl of urls) {
+                const response = await api.get(fileUrl.trim(), { responseType: 'blob' });
+                const fileName = fileUrl.split('/').pop();
+                zip.file(fileName, response.data);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'NotesBundle.zip');
+        } catch (error) {
+            console.error("Download error:", error);
+            showErrorToast('Could not download the ZIP file.');
+        }
     };
     useEffect(() => {
         fetchData();
@@ -119,11 +146,10 @@ function SoldNotes() {
     useEffect(() => {
         const result = data.filter(item => {
             const titleMatch = item.noteTitle.toLowerCase().includes(search.toLowerCase());
-            const buyerEmail = item.buyerEmail.toLowerCase().includes(search.toLowerCase());
             const categoryMatch = item.category.toLowerCase().includes(search.toLowerCase());
             const sellTypeMatch = item.sellFor.toLowerCase().includes(search.toLowerCase());
             const priceMatch = item.sellPrice.toString().includes(search.toLowerCase()); // Assuming price is a string
-            return titleMatch || categoryMatch || sellTypeMatch || priceMatch||buyerEmail;
+            return titleMatch || categoryMatch || sellTypeMatch || priceMatch;
         });
         setFilter(result);
     }, [data, search]);
@@ -147,7 +173,7 @@ function SoldNotes() {
                             subHeader
                             subHeaderComponent={
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <h1 style={{ marginRight: '450px', color: '#734dc4', fontSize: '20px' }}>My Sold Notes</h1>
+                                    <h1 style={{ marginRight: '400px', color: '#734dc4', fontSize: '20px' }}>My Rejected Notes</h1>
                                     <input type='text' className='w-25 form-control' placeholder='search..' value={search} onChange={(e) => setSearch(e.target.value)} />
                                 </div>
                             }
@@ -159,4 +185,4 @@ function SoldNotes() {
     );
 }
 
-export default SoldNotes;
+export default MyRejectedNotes;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import api from '../Services/api';
-import { toast,ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
 
 const AddLookup = () => {
   const navigate = useNavigate();
@@ -60,19 +61,13 @@ const AddLookup = () => {
         typeName
       });
 
-      toast.success('Lookup added successfully', {
-        position: 'bottom-right',
-        autoClose: 3000,
-      });
+      showSuccessToast('Lookup added successfully');
 
       setTimeout(() => {
         navigate(`/lookup`);
       }, 4000);
     } catch (error) {
-      toast.error('Failed to save lookup. Please try again.', {
-        position: 'bottom-right',
-        autoClose: 3000,
-      });
+      showErrorToast('Failed to save lookup. Please try again.');
     }
   };
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../Services/api';
+
 
 function DownloadNotes() {
     const navigate = useNavigate();
@@ -39,7 +41,7 @@ function DownloadNotes() {
             name: "ACTION",
             cell: (row) => (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80%' }}>
-                    <img src="eye.png" alt="Edit" title="View" onClick={() => handleView(row.noteId)} style={{ cursor: 'pointer', marginRight: '9px' }} />
+                    <img src="/eye.png" alt="Edit" title="View" onClick={() => handleView(row.noteId)} style={{ cursor: 'pointer', marginRight: '9px' }} />
                 </div>
             ),
             width: '120px'
@@ -60,33 +62,37 @@ function DownloadNotes() {
 
     useEffect(() => {
         const fetchData = async () => { // Moved fetchData inside useEffect
-            try {
-                let url = "http://localhost:5000/api/downloadnotes";
-                if (id) {
-                    if (id.includes("@")) {
-                        url = `http://localhost:5000/api/downloadnotesbyemail/${id}`;
-                    } else {
-                        url = `http://localhost:5000/api/downloadnotesbyId/${id}`;
-                    }
-                }
-                const req = await fetch(url);
-                const res = await req.json();
-                if (Array.isArray(res)) {
-                    setData(res);
-                    setFilter(res);
-                } else {
-                    setData([]);
-                    setFilter([]);
-                    console.warn('No data available:', res.message || 'Unexpected response format');
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                setData([]);
-                setFilter([]);
+          try {
+            let url = `/downloadnotes`;
+            if (id) {
+              if (id.includes("@")) {
+                url = `/downloadnotesbyemail/${id}`;
+              } else {
+                url = `/downloadnotesbyId/${id}`;
+              }
             }
+      
+            const response = await api.get(url);
+            const res = response.data;
+      
+            if (Array.isArray(res)) {
+              setData(res);
+              setFilter(res);
+            } else {
+              setData([]);
+              setFilter([]);
+              console.warn('No data available:', res.message || 'Unexpected response format');
+            }
+          } catch (error) {
+            console.error('Error fetching data:', error);
+            setData([]);
+            setFilter([]);
+          }
         };
+      
         fetchData();
-    }, [id]);
+      }, [id]);
+      
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -109,7 +115,8 @@ function DownloadNotes() {
     const distinctNoteTitles = [...new Set(data.map(item => item.noteTitle))];
 
     return (
-        <div style={{ paddingTop: '10px' }}>
+        <div style={{ paddingTop: '100px' }}>
+            <h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Downloaded Notes</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>

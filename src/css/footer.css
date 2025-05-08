@@ -1,0 +1,46 @@
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%; /* Ensure it spans the full width */
+  background-color: #f8f9fa;
+  color: #212529;
+  padding: 5px 10px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between; /* Keep content on left and right */
+  align-items: center;
+  font-size: 0.8em;
+}
+
+footer .col-md-6 {
+  flex-grow: 1; /* Allow the left side to take up available space */
+  margin-bottom: 0 !important; /* Override Bootstrap margin */
+}
+
+footer p {
+  margin-bottom: 0;
+}
+
+footer .text-end {
+  display: flex; /* Enable Flexbox for horizontal layout of links/icons */
+  align-items: center; /* Vertically align items in the center */
+}
+
+footer .text-end a {
+  margin-left: 5px; /* Add some spacing between the links */
+}
+
+footer img {
+  width: 5px;
+  height: 5px;
+}
+
+.social-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 20%;
+  background-color:#734dc4; 
+  padding: 5px; 
+  display: inline-block; 
+}

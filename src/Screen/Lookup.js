@@ -3,8 +3,10 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css';
 import '../css/allPublishNotes.css';
 import { useNavigate, Link } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
+import api from '../Services/api';
+import { showConfirm } from '../Utility/ConfirmBox'; 
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
 
 function Lookup() {
   const navigate = useNavigate();
@@ -14,8 +16,9 @@ function Lookup() {
 
   const fetchData = async () => {
     try {
-      const req = await fetch(`http://localhost:5000/api/getAllLookup`);
-      const res = await req.json();
+      const response = await api.get('/getAllLookup');
+      const res = response.data;
+  
       if (Array.isArray(res)) {
         setData(res);
       } else {
@@ -26,6 +29,7 @@ function Lookup() {
       setData([]);
     }
   };
+  
 
   useEffect(() => {
     fetchData();
@@ -49,26 +53,24 @@ function Lookup() {
   };
 
   const handleDelete = async (typeId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this lookup entry?");
-    if (!confirmDelete) return;
-
+    const confirmed = await showConfirm("Are you sure you want to delete this lookup entry?");
+    if (!confirmed) return;
+  
     try {
-      const response = await fetch(`http://localhost:5000/api/deleteLookup/${typeId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success("Lookup deleted successfully!", { position: 'bottom-right',autoClose: 3000 });
+      const response = await api.delete(`/deleteLookup/${typeId}`);
+  
+      if (response.status === 200) {
+        showSuccessToast("Lookup deleted successfully!");
         fetchData(); 
       } else {
-        toast.error("Failed to delete lookup. Please try again.", {  position: 'bottom-right',autoClose: 3000 });
+        showErrorToast("Failed to delete lookup. Please try again.");
       }
     } catch (error) {
       console.error('Error deleting lookup:', error);
-      toast.error("An error occurred while deleting.", {  position: 'bottom-right',autoClose: 3000 });
+      showErrorToast("An error occurred while deleting.");
     }
   };
-
+  
   const columns = [
     {
       name: "S.NO",
@@ -90,13 +92,13 @@ function Lookup() {
         row.typeCode === 'TYP' ? 'Types' :
         row.typeCode,
       sortable: true,
-      width: '160px'
+      width: '190px'
     },
     {
       name: "TYPE NAME",
       selector: (row) => row.typeName,
       sortable: true,
-      width: '190px'
+      width: '200px'
     },
     {
       name: "ADDED DATE",
@@ -108,7 +110,7 @@ function Lookup() {
         return `${day}-${month}-${year}`;
       },
       sortable: true,
-      width: '130px'
+      width: '150px'
     },
     {
         name: "UPDATED DATE",
@@ -120,7 +122,7 @@ function Lookup() {
           return `${day}-${month}-${year}`;
         },
         sortable: true,
-        width: '130px'
+        width: '150px'
       },
     {
       name: "ACTION",

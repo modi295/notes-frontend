@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../Services/api';
+
 
 const NotesGrid = () => {
     const navigate = useNavigate();
@@ -11,36 +13,49 @@ const NotesGrid = () => {
     const [categoryType, setCategoryType] = useState('')
     const [notesType, setNotesType] = useState('')
     const [countryType, setCountryType] = useState('')
-    // const [courseType, setCourseType] = useState('')
-
+    const [supportImage, setSupportImage] = useState(null);
     const [distinctUniversities, setDistinctUniversities] = useState([]);
     const [distinctCategory, setDistinctCategory] = useState([]);
     const [distinctNotesType, setDistinctNotesType] = useState([]);
     const [distinctCountry, setDistinctCountry] = useState([]);
-    // const [distinctCourse, setDistinctCourse] = useState([]);
 
     const notesPerPage = 6;
 
-
     const getNotes = async () => {
-        const response = await fetch('http://localhost:5000/api/allpublishNotes');
-        const data = await response.json();
-        setNotes(data);
-
-        const universities = [...new Set(data.map(note => note.universityInformation))];
-        setDistinctUniversities(universities);
-        const categories = [...new Set(data.map(note => note.category))];
-        setDistinctCategory(categories);
-        const noteType = [...new Set(data.map(note => note.notesType))];
-        setDistinctNotesType(noteType);
-        const country = [...new Set(data.map(note => note.country))];
-        setDistinctCountry(country);
-
+        try {
+          const url = `/allpublishNotes`;
+          const response = await api.get(url);
+          const data = response.data;
+      
+          setNotes(data);
+      
+          const universities = [...new Set(data.map(note => note.universityInformation))];
+          setDistinctUniversities(universities);
+          const categories = [...new Set(data.map(note => note.category))];
+          setDistinctCategory(categories);
+          const noteType = [...new Set(data.map(note => note.notesType))];
+          setDistinctNotesType(noteType);
+          const country = [...new Set(data.map(note => note.country))];
+          setDistinctCountry(country);
+        } catch (error) {
+          console.error('Error fetching notes:', error);
+        }
+      };
+      
+    const fetchSupportInfo = async () => {
+        try {
+            const response = await api.get('/support');
+            setSupportImage(response.data.noteImage); // Assuming the field is named noteImage
+        } catch (error) {
+            console.error('Error fetching support info:', error);
+        }
     };
+    
 
 
     useEffect(() => {
         getNotes();
+        fetchSupportInfo();
     }, []);
 
     const handleSearch = (event) => {
@@ -66,6 +81,17 @@ const NotesGrid = () => {
         navigate(`/viewNotes/${id}`);
     };
 
+    const generateAverageRatingStars = (averageRating) => {
+        if (averageRating === null || averageRating === undefined) {
+            return 'No Ratings';
+        }
+        const roundedRating = Math.round(averageRating);
+        let stars = '';
+        for (let i = 0; i < 5; i++) {
+            stars += i < roundedRating ? '★' : '☆';
+        }
+        return <span style={{ color: '#deeb34',fontSize:'24px' }}>{stars}</span>;
+    };
 
     const filteredNotes = notes.filter((note) => {
         const titleMatch = note.noteTitle.toLowerCase().includes(searchTerm.toLowerCase());
@@ -127,7 +153,7 @@ const NotesGrid = () => {
                             placeholder="Search notes here..."
                             value={searchTerm}
                             onChange={handleSearch}
-                            style={{ paddingLeft: '30px' }} // Adjust padding left to accommodate the icon
+                            style={{ paddingLeft: '30px' }} 
                         />
                     </div>
                 </div>
@@ -179,14 +205,15 @@ const NotesGrid = () => {
             <div className="product-cards">
                 {currentNotes.map((note) => (
                     <div className="product-card" key={note.id} onClick={() => handleCardClick(note.id)} style={{ cursor: 'pointer' }}>
-                        <img src={note.displayPictureP} alt={note.noteTitle} style={{ width: '100%', height: '250px' }} />
+                        <img   src={note.displayPictureP ? note.displayPictureP : supportImage}  alt={note.noteTitle} style={{ width: '100%', height: '250px' }} />
                         <div className="product-info">
                             <h4>{note.noteTitle}</h4>
                             <p><img src='/university.png' alt='university' /> <span style={{ marginLeft: '10px' }}>{note.universityInformation}</span></p>
                             <p><img src='/pages.png' alt='pages' /> <span style={{ marginLeft: '15px' }}>{note.numberOfPages} pages</span></p>
-                            <p><img src='/date.png' alt='date' /> <span style={{ marginLeft: '20px' }}>{note.updatedAt}</span></p>
-                            <p><img src='/flag.png' alt='flag' /> <span style={{ marginLeft: '25px', color: 'red' }}>5 user marked this notes as inappropriate</span></p>
-                            <p style={{ margin: '0' }}><span style={{ color: '#deeb34' }}>★★★★☆</span> 4 out of 5 stars</p>
+                            <p><img src='/date.png' alt='date' /> <span style={{ marginLeft: '20px' }}>{new Date(note.updatedAt).toLocaleDateString()}</span></p>
+                            <p><img src='/flag.png' alt='flag' /> <span style={{ marginLeft: '25px', color: 'red' }}>{note.reportCount} user marked this notes as inappropriate</span></p>
+                            <p style={{ margin: '0' }}>{generateAverageRatingStars(note.averageRating)} {note.averageRating !== null && note.averageRating !== undefined ? `${note.averageRating} Ratings` : ''}
+</p>
                         </div>
 
                     </div>

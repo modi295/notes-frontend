@@ -3,6 +3,8 @@ import Banner from '../Component/banner';
 import api from '../Services/api';
 import '../css/Login.css'
 import { getUserEmail } from '../Services/auth';
+import { ToastContainer } from 'react-toastify';
+import { showErrorToast } from '../Utility/ToastUtility';
 
 function ContactUs() {
   const [fullName, setFullName] = useState('');
@@ -22,7 +24,8 @@ function ContactUs() {
       setRequestSent(true);
 
     } catch (error) {
-      alert('Error creating account: ' + error.response.data.error);
+      showErrorToast('Error Occur.');
+      console.error('Error creating account: ' + error.response.data.error);
     }
   }
   return (
@@ -65,6 +68,7 @@ function ContactUs() {
           </div>
         </form>
       </div>
+      <ToastContainer />
     </div>
   )
 }

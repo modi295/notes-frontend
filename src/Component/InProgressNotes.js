@@ -3,6 +3,7 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate } from 'react-router-dom';
 import { getUserEmail } from '../Services/auth';
+import api from '../Services/api';
 
 function InProgressNotes() {
     const navigate = useNavigate();
@@ -69,26 +70,26 @@ function InProgressNotes() {
 
     const fetchData = async () => {
         try {
-            const email = getUserEmail();
-            const url = `http://localhost:5000/api/saveNotes/${email}`;
-            const req = await fetch(url);
-            const res = await req.json();
-
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                // Handle cases where the response contains a message or is not an array
-                setData([]);
-                setFilter([]);
-                console.warn('No data available:', res.message || 'Unexpected response format');
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
+          const email = getUserEmail();
+          const url = `/saveNotes/${email}`;
+          const response = await api.get(url);
+          const res = response.data;
+      
+          if (Array.isArray(res)) {
+            setData(res);
+            setFilter(res);
+          } else {
             setData([]);
             setFilter([]);
+            console.warn('No data available:', res.message || 'Unexpected response format');
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setData([]);
+          setFilter([]);
         }
-    };
+      };
+      
 
     useEffect(() => {
         fetchData();
@@ -106,17 +107,16 @@ function InProgressNotes() {
 
     const handleDelete = async (id) => {
         try {
-            await fetch(`http://localhost:5000/api/deleteNote/${id}`, {
-                method: 'DELETE'
-            });
-            // Filter out the deleted note from the data
-            const updatedData = data.filter(item => item.id !== id);
-            setData(updatedData);
-            setFilter(updatedData);
+          await api.delete(`/deleteNote/${id}`);
+          
+          const updatedData = data.filter(item => item.id !== id);
+          setData(updatedData);
+          setFilter(updatedData);
         } catch (error) {
-            console.error('Error deleting note:', error);
+          console.error('Error deleting note:', error);
         }
-    };
+      };
+      
     const handleEdit = (id) => {
         navigate(`/editNotes/${id}`);
     };

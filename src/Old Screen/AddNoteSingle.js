@@ -1,4 +1,4 @@
-import { React, useState, useEffect } from 'react';
+import { React, useState,useEffect  } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
@@ -9,17 +9,19 @@ import { ToastContainer } from 'react-toastify';
 import { getUserEmail } from '../Services/auth';
 import * as pdfjsLib from 'pdfjs-dist';
 import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
-import { showConfirm } from '../Utility/ConfirmBox';
+import { showConfirm } from '../Utility/ConfirmBox'; 
+
+
 
 const AddNotes = () => {
     const navigate = useNavigate();
     const [sellForValue, setSellForValue] = useState('');
-    const [displayPictureP, setDisplayPictureP] = useState(null);
-    const [previewUploadP, setPreviewUploadP] = useState(null);
+    const [displayPictureP, setDisplayPictureP] = useState();
+    const [previewUploadP, setPreviewUploadP] = useState();
+    const [notesAttachmentP, setNotesAttachmentP] = useState();
     const [countries, setCountries] = useState([]);
     const [categories, setCategories] = useState([]);
     const [noteTypes, setNoteTypes] = useState([]);
-    const [totalPages, setTotalPages] = useState(0);
 
 
     const validationSchema = Yup.object().shape({
@@ -34,88 +36,21 @@ const AddNotes = () => {
         courseCode: Yup.string().required('Course Code is required'),
         professorLecturer: Yup.string().required('Professor/Lecturer is required'),
         sellFor: Yup.string().required('Sell For is required'),
-        sellPrice: Yup.number().when('sellFor', (sellFor, schema) => {
-            if (sellFor === 'paid') {
-                return schema.required('Sell Price is required').min(0, 'Sell Price cannot be negative');
-            }
-            return schema.notRequired().nullable();
-        }),
-        displayPictureP: Yup.mixed().nullable(),
-        notesAttachmentP: Yup.array().min(1, 'Please upload at least one notes attachment.').of(
-            Yup.mixed().test('fileSize', 'File size must be less than 5MB', (value) => {
-                if (value) {
-                    return value.size <= 5 * 1024 * 1024; // 5MB
-                }
-                return true;
-            }).test('fileType', 'Only PDF files are allowed', (value) => {
-                if (value) {
-                    return value.type === 'application/pdf';
-                }
-                return true;
-            })
-        ),
-        previewUploadP: Yup.mixed().nullable(),
+        sellPrice: Yup.number().default(0),
+        displayPictureP: Yup.string(),
+        notesAttachmentP: Yup.string(),
+        previewUploadP: Yup.string()
     });
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm({  // Removed reset
-        resolver: yupResolver(validationSchema),
-        defaultValues: {
-            notesAttachmentP: [],
-        },
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm({
+        resolver: yupResolver(validationSchema)
     });
-
-    const watchNotesAttachmentP = watch('notesAttachmentP');
-
-    useEffect(() => {
-        console.log('watchNotesAttachmentP updated:', watchNotesAttachmentP);
-        let pages = 0;
-        if (watchNotesAttachmentP && watchNotesAttachmentP.length > 0) {
-            const processFiles = async () => {
-                for (const file of watchNotesAttachmentP) {
-                    if (file && file.type === 'application/pdf') {
-                        try {
-                            const fileReader = new FileReader();
-                            await new Promise((resolve, reject) => {
-                                fileReader.onload = async () => {
-                                    const typedArray = new Uint8Array(fileReader.result);
-                                    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`;
-                                    try {
-                                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-                                        pages += pdf.numPages;
-                                    } catch (error) {
-                                        console.error('Error loading PDF:', error);
-                                        showErrorToast(`Error loading ${file.name}. Please try again.`);
-                                    }
-                                    resolve();
-                                };
-                                fileReader.onerror = (error) => {
-                                    console.error('Error reading file:', error);
-                                    showErrorToast(`Error reading ${file.name}. Please try again.`);
-                                    reject(error);
-                                };
-                                fileReader.readAsArrayBuffer(file);
-                            });
-                        } catch (error) {
-                            console.error('Error processing PDF:', error);
-                        }
-                    }
-                }
-                setTotalPages(pages); // Update state here
-                setValue('numberOfPages', pages);
-            };
-
-            processFiles();
-        } else {
-            setTotalPages(0);
-            setValue('numberOfPages', 0);
-        }
-    }, [watchNotesAttachmentP, setValue]);
-
     const onSubmit = async (data) => {
         try {
             const userEmail = getUserEmail();
             data.publishFlag = 'N';
             const formData = new FormData();
+            // Append each field to the formData object
             formData.append('email', userEmail);
             formData.append('noteTitle', data.noteTitle);
             formData.append('category', data.category);
@@ -131,11 +66,12 @@ const AddNotes = () => {
             formData.append('sellPrice', data.sellPrice);
             formData.append('statusFlag', data.statusFlag);
             formData.append('publishFlag', data.publishFlag);
-            if (data.previewUploadP && data.previewUploadP[0]) { formData.append('previewUploadP', data.previewUploadP[0]); }
-            if (data.displayPictureP && data.displayPictureP[0]) { formData.append('displayPictureP', data.displayPictureP[0]); }
-            data.notesAttachmentP.forEach((file) => { formData.append('notesAttachmentP', file); });
-            console.log('Form Data:', [...formData.entries()]);
+            formData.append('notesAttachmentP', notesAttachmentP);
+            formData.append('previewUploadP', previewUploadP);
+            formData.append('displayPictureP', displayPictureP);
 
+            console.log(formData);
+            // Send formData to the API endpoint
             const response = await api.post('/upload', formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -144,36 +80,43 @@ const AddNotes = () => {
             console.log('Note added successfully:', response.data);
             showSuccessToast('Notes added successfully');
             setTimeout(() => {
-                navigate('/sellNotes');
-            }, 2000);
+                navigate(`/sellNotes`);
+            }, 4000);
         } catch (error) {
             console.error('Error adding note:', error);
             showErrorToast('Failed to save notes. Please try again.');
         }
     };
-
     const handleDisplayPictureChange = (event) => {
         const file = event.target.files[0];
+        console.log(file);
         setDisplayPictureP(file);
-        setValue('displayPictureP', event.target.files);
-        trigger('displayPictureP');
     };
-
     const handlePreviewUploadChange = (event) => {
         const file = event.target.files[0];
+        console.log(file);
         setPreviewUploadP(file);
-        setValue('previewUploadP', event.target.files);
-        trigger('previewUploadP');
     };
 
-    const handleNotesAttachmentChange = (event) => {
-        const files = Array.from(event.target.files);
-        setValue('notesAttachmentP', [...watch('notesAttachmentP'), ...files]); // Corrected
-        trigger('notesAttachmentP');
-    };
+    const handleNotesAttachmentChange = async (event) => {
+        const file = event.target.files[0];
+        setNotesAttachmentP(file);
 
-    const removeAttachedFile = (index) => {
-        setValue('notesAttachmentP', watch('notesAttachmentP').filter((_, i) => i !== index)); // Corrected
+        if (file) {
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async () => {
+                    const typedArray = new Uint8Array(fileReader.result);
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.mjs`;
+                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                    setValue('numberOfPages', pdf.numPages);
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('Error counting PDF pages:', error);
+                showErrorToast('Error reading PDF. Please try again.');
+            }
+        }
     };
 
     const handleSellForChange = (event) => {
@@ -181,22 +124,24 @@ const AddNotes = () => {
     };
 
     const handleSave = () => {
+        console.log("Check");
         handleSubmit((data) => {
-            data.statusFlag = 'S';
-            onSubmit(data);
+            data.statusFlag = 'S'; 
+            onSubmit(data);      
         })();
+
     };
 
     const handlePublish = async () => {
+        console.log("Check");
         const confirmed = await showConfirm("Publishing this note will send the note to the administrator for review. Once reviewed and approved, it will be published to the portal. Press Yes to continue.");
         if (confirmed) {
             handleSubmit((data) => {
-                data.statusFlag = 'P';
-                onSubmit(data);
+                data.statusFlag = 'P'; 
+                onSubmit(data);       
             })();
         }
     };
-
     useEffect(() => {
         const fetchLookupData = async () => {
             try {
@@ -217,6 +162,7 @@ const AddNotes = () => {
     }, []);
 
     return (
+
         <div>
             <Banner text="Add Notes" imageHeight="250px" />
 
@@ -230,21 +176,22 @@ const AddNotes = () => {
                                 <input type="text" className="form-control" {...register('noteTitle')} maxLength="100" />
                                 {errors.noteTitle && <span className="text-danger">{errors.noteTitle.message}</span>}
                             </div>
+                            {/* onChange={handleDisplayPictureChange} */}
                             <div className="form-group">
-                                <label>Display Picture</label>
-                                <input type="file" className="form-control" onChange={handleDisplayPictureChange} accept="image/*" {...register('displayPictureP')} />
-                                {errors.displayPictureP && <span className="text-danger">{errors.displayPictureP?.message}</span>}
+                                <label>Display Picture<span className="required">*</span></label>
+                                <input type="file" className="form-control" onChange={handleDisplayPictureChange} accept="image/*" />
+                                {errors.displayPictureP && <span className="text-danger">{errors.displayPictureP.message}</span>}
                             </div>
                             <div className="form-group">
                                 <label>Notes Type<span className="required">*</span></label>
                                 <select className="form-control" {...register('notesType')}>
-                                    <option value="">Select Notes Type</option>
-                                    {noteTypes.map((noteType) => (
-                                        <option key={noteType.TypeId} value={noteType.TypeId}>
-                                            {noteType.typeName}
-                                        </option>
-                                    ))}
-                                </select>
+                        <option value="">Select Notes Type</option>
+                        {noteTypes.map((noteType) => (
+                            <option key={noteType.TypeId} value={noteType.TypeId}>
+                                {noteType.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.notesType && <span className="text-danger">{errors.notesType.message}</span>}
                             </div>
                         </div>
@@ -252,49 +199,23 @@ const AddNotes = () => {
                             <div className="form-group">
                                 <label>Category<span className="required">*</span></label>
                                 <select className="form-control" {...register('category')}>
-                                    <option value="">Select Category</option>
-                                    {categories.map((category) => (
-                                        <option key={category.TypeId} value={category.TypeId}>
-                                            {category.typeName}
-                                        </option>
-                                    ))}
-                                </select>
+                        <option value="">Select Category</option>
+                        {categories.map((category) => (
+                            <option key={category.TypeId} value={category.TypeId}>
+                                {category.typeName}
+                            </option>
+                        ))}
+                    </select>
                                 {errors.category && <span className="text-danger">{errors.category.message}</span>}
                             </div>
                             <div className="form-group">
                                 <label>Notes Attachment<span className="required">*</span></label>
-                                <input type="file" className="form-control" onChange={handleNotesAttachmentChange} accept=".pdf" multiple />
+                                <input type="file" className="form-control" onChange={handleNotesAttachmentChange} accept=".pdf" />
                                 {errors.notesAttachmentP && <span className="text-danger">{errors.notesAttachmentP.message}</span>}
-                                {watchNotesAttachmentP && watchNotesAttachmentP.length > 0 && (
-                                    <div className="mt-2">
-                                        <strong className="d-block mb-2" style={{ fontSize: '0.8rem' }}>Attached Files:</strong>
-                                        <div style={{ gap: '2px' }}>
-                                            {watchNotesAttachmentP.map((file, index) => (
-                                                <button
-                                                    key={index}
-                                                    type="button"
-                                                    className="btn btn-outline-secondary"
-                                                    style={{ fontSize: '0.75rem', padding: '2px 8px',lineHeight: '1.2',width: 'fit-content', maxWidth: '100%', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '4px',}}
-                                                    title="Click to remove"
-                                                    onClick={() => removeAttachedFile(index)}
-                                                >
-                                                    {file.name} x
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
                             </div>
                             <div className="form-group">
                                 <label>Number of Pages<span className="required">*</span></label>
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    {...register('numberOfPages')}
-                                    value={totalPages} // Use the totalPages state here
-                                    disabled
-                                />
+                                <input type="number" className="form-control" {...register('numberOfPages')} defaultValue={0} disabled />
                                 {errors.numberOfPages && <span className="text-danger">{errors.numberOfPages.message}</span>}
                             </div>
                         </div>
@@ -310,18 +231,18 @@ const AddNotes = () => {
                     <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>Institution Information</h1>
                     <div className="row">
                         <div className="col-md-6">
-                            <div className="form-group">
-                                <label>Country<span className="required">*</span></label>
-                                <select className="form-control" {...register('country')}>
-                                    <option value="">Select Country</option>
-                                    {countries.map((country) => (
-                                        <option key={country.TypeId} value={country.TypeId}>
-                                            {country.typeName}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.country && <span className="text-danger">{errors.country.message}</span>}
-                            </div>
+                        <div className="form-group">
+                    <label>Country<span className="required">*</span></label>
+                    <select className="form-control" {...register('country')}>
+    <option value="">Select Country</option>
+    {countries.map((country) => (
+        <option key={country.TypeId} value={country.TypeId}>
+            {country.typeName}
+        </option>
+    ))}
+</select>
+                    {errors.country && <span className="text-danger">{errors.country.message}</span>}
+                </div>
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
@@ -372,15 +293,15 @@ const AddNotes = () => {
                                 <div className="form-group">
                                     <label>Sell Price<span className="required">*</span></label>
                                     <input type="number" className="form-control" {...register('sellPrice')} />
-                                    {errors.sellPrice && <span className="text-danger">{errors.sellPrice?.message}</span>}
+                                    {errors.sellPrice && <span className="text-danger">{errors.sellPrice.message}</span>}
                                 </div>
                             )}
                         </div>
                         <div className="col-md-6">
                             <div className="form-group">
-                                <label>Preview Upload</label>
-                                <input type="file" className="form-control" onChange={handlePreviewUploadChange} accept=".pdf" {...register('previewUploadP')} />
-                                {errors.previewUploadP && <span className="text-danger">{errors.previewUploadP?.message}</span>}
+                                <label>Preview Upload<span className="required">*</span></label>
+                                <input type="file" className="form-control" onChange={handlePreviewUploadChange} accept=".pdf" />
+                                {errors.previewUploadP && <span className="text-danger">{errors.previewUploadP.message}</span>}
                             </div>
                         </div>
                     </div>

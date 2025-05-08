@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import api from '../Services/api';
-import { toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { showSuccessToast, showErrorToast,showWarningToast } from '../Utility/ToastUtility';
 
 const AddAdministrator = () => {
   const navigate = useNavigate();
@@ -65,15 +66,7 @@ const AddAdministrator = () => {
     const existingUser = await checkEmailExists(email);
 
     if (existingUser) {
-      toast.warn('Email already exists. Please use a different email.', {
-        position: 'bottom-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      showWarningToast('Email already exists. Please use a different email.');
       return;
     }
 
@@ -93,29 +86,13 @@ const AddAdministrator = () => {
         phoneNumberCode,
       });
 
-      toast.success('User added successfully', {
-        position: 'bottom-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      showSuccessToast('User added successfully');
 
       setTimeout(() => {
         navigate(`/administrator`);
       }, 4000);
     } catch (error) {
-      toast.error('Failed to save user. Please try again.', {
-        position: 'bottom-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      showErrorToast('Failed to save user. Please try again.');
     }
   };
   return (
@@ -168,6 +145,8 @@ const AddAdministrator = () => {
           <button type="submit" style={{ width: '70%', padding: '10px', backgroundColor: '#673ab7', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}> SUBMIT</button>
         </form>
       </div>
+      <ToastContainer />
+
     </div>
   );
 };

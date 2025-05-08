@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../Services/api';
-import { getUserEmail, isLoggedIn } from '../Services/auth';
+import { getUserEmail, isLoggedIn, getUserRole } from '../Services/auth';
 import { useNavigate } from 'react-router-dom';
-//const CryptoJS = require('crypto-js'); 
+import { ToastContainer} from 'react-toastify';
+import { showAlert, showConfirm } from '../Utility/ConfirmBox'; 
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import Loading from '../Utility/Loading';
+
 
 function ViewNotes() {
     const { id } = useParams();
     const [note, setNote] = useState(null);
-
+    const [reviews, setReviews] = useState([]);
+    const [averageRating, setAverageRating] = useState(null);
+    const [supportImage, setSupportImage] = useState(null);
     const navigate = useNavigate();
+    const isAdmin = getUserRole() === 'Admin' || getUserRole() === 'SAdmin';
 
     const postBuyerNote = async (note) => {
         try {
@@ -32,13 +39,13 @@ function ViewNotes() {
             if (response.data.success) {
                 // Initiate PayU payment here
                 //initiatePayUPayment(note.sellPrice, note.noteTitle); 
-                alert('Please complete the payment to access the notes. Once the payment is successful, the notes will be available for download in your account.');
+                showAlert('Please complete the payment to access the notes. Once the payment is successful, the notes will be available for download in your account.',"info");
             } else {
-                alert('There was an error with your purchase. Please try again.');
+                showAlert('There was an error with your purchase. Please try again.',"error");
             }
         } catch (error) {
             console.error(error);
-            alert('An error occurred while processing your request.');
+            showAlert('An error occurred while processing your request.',"error");
         }
     };
 
@@ -119,7 +126,7 @@ function ViewNotes() {
             await api.post('/downloadnotes', data);
         } catch (error) {
             console.error(error);
-            alert('An error occurred while processing your request.');
+            showAlert('An error occurred while processing your request.',"error");
         }
     };
 
@@ -142,27 +149,64 @@ function ViewNotes() {
             await api.post('/soldnotes', data);
         } catch (error) {
             console.error(error);
-            alert('An error occurred while processing your request.');
+            showAlert('An error occurred while processing your request.',"error");
         }
     };
 
-    const handleDownloadClick = () => {
+    const handleDeleteReview = async (downloadNoteId) => {
+        if (isAdmin) {
+            try {
+                const response = await api.put(`/downloadNote/${downloadNoteId}`, { // Ensure the API endpoint is correct
+                    rating: null,
+                    comment: null,
+                });
+    
+                if (response.data.success) {
+                    showSuccessToast('Review deleted successfully');
+                    setReviews(prevReviews => prevReviews.filter(review => review.id !== downloadNoteId));
+                } else {
+                    showErrorToast('Failed to delete review.');
+                    console.error('Failed to delete review:', response.data.message);
+                }
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                showErrorToast('An error occurred while deleting the review.');
+            }
+        }
+    };
+    const handleDownloadClick = async () => {
         if (!isLoggedIn()) {
             navigate('/login');
         } else {
+            if (isAdmin) {
+                const confirmed = await showConfirm("Do you really want to download this Note?");
+                if (!confirmed) return;
+                window.open(note.notesAttachmentP, '_blank');
+                return; 
+            }
+
             if (note.sellFor === 'free') {
                 postDownloadNote(note);
                 postSoldNote(note);
-                window.location.href = note.notesAttachmentP;
+                window.open(note.notesAttachmentP, '_blank');
             } else {
-                const userConfirmed = window.confirm('This note is paid. Do you want to proceed with the purchase?');
-                if (userConfirmed) {
+                const confirmed = await showConfirm("This note is paid. Do you want to proceed with the purchase?");
+                if (confirmed) {
                     postBuyerNote(note);
                 }
             }
         }
     };
 
+    const fetchSupportInfo = async () => {
+        try {
+            const response = await api.get('/support');
+            setSupportImage(response.data.noteImage); // Assuming the field is named noteImage
+        } catch (error) {
+            console.error('Error fetching support info:', error);
+        }
+    };
+    
     useEffect(() => {
         const fetchNote = async () => {
             try {
@@ -173,21 +217,76 @@ function ViewNotes() {
                 console.error('Error fetching note:', error);
             }
         };
-
+        const fetchReviews = async () => {
+            try {
+                const response = await api.get(`/reviewdownloadnotesbyId/${id}`);
+                const formattedReviews = response.data.map((review) => {
+                    if (review.profilePicture && review.profilePicture.data) {
+                        const imageData = new Uint8Array(review.profilePicture.data);
+                        const base64Image = arrayBufferToBase64(imageData);
+                        return {
+                            ...review,
+                            profilePicture: `data:image/png;base64,${base64Image}`,
+                        };
+                    }
+                    return review;
+                });
+                setReviews(formattedReviews);
+                if (response.data.length > 0) {
+                    setAverageRating(response.data[0].averageRating);
+                } else {
+                    setAverageRating(null);
+                }
+               
+            } catch (error) {
+                console.error('Error fetching reviews:', error);
+            }
+        };
+        fetchReviews();
         fetchNote();
+        fetchSupportInfo();
     }, [id]);
 
+    const arrayBufferToBase64 = (buffer) => {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    };
     if (!note) {
-        return <div>Loading...</div>;
+        return <Loading />;
     }
+    const renderStars = (rating) => {
+        let stars = '';
+        for (let i = 0; i < 5; i++) {
+          stars += i < rating ? '★' : '☆';
+        }
+        return <span style={{ color: '#deeb34' }}>{stars}</span>;
+      };
+
+      const generateAverageRatingStars = (averageRating) => {
+        if (averageRating === null || averageRating === undefined) {
+            return 'No Ratings';
+        }
+        const roundedRating = Math.round(averageRating);
+        let stars = '';
+        for (let i = 0; i < 5; i++) {
+            stars += i < roundedRating ? '★' : '☆';
+        }
+        return <span style={{ color: '#deeb34',fontSize:'24px' }}>{stars}</span>;
+    };
+
+
     return (
         <div>
             <h5 style={{ paddingTop: 110, paddingLeft: 100, color: '#734dc4', fontSize: '20px' }}>Notes Details</h5>
             <div className="container">
                 <div className="row d-flex ">
                     <div className="col-md-3">
-                        <img src={note.displayPictureP} alt="Notes" className="img-fluid" height={500} width={500} />
-
+                        <img src={note.displayPictureP ? note.displayPictureP : supportImage} alt="Notes" className="img-fluid" height={500} width={500} />
                     </div>
                     <div className="col-md-4">
                         <h1 style={{ color: '#734dc4', fontSize: '40px' }} >{note.noteTitle}</h1>
@@ -195,7 +294,7 @@ function ViewNotes() {
                         <p><strong>Description:</strong>{note.notesDescription}</p>
                         <button className="btn btn-sm" onClick={handleDownloadClick} style={{ backgroundColor: '#734dc4', color: 'white' }}>DOWNLOAD/${note.sellPrice}</button>
                     </div>
-                    <div className="col-md-2" style={{ paddingLeft: 60 }}>
+                    <div className="col-md-3" style={{ paddingLeft: 60 }}>
                         <p>Institution</p>
                         <p>Country</p>
                         <p>Course Name</p>
@@ -204,19 +303,19 @@ function ViewNotes() {
                         <p>Number Of Pages</p>
                         <p>Approved Date</p>
                         <p>Rating</p>
+                        <p> <span style={{ color: 'red' }}>{note.reportCount} user reported this note</span></p>
                     </div>
                     <div className="col-md-2 text-end">
-                        {/* <p><strong>DOWNLOAD/$15</strong></p>
-          <p><strong>Rating: ★★★★☆ 100 Reviews</strong></p>
-          <p><strong>5 Users marked this note as inappropriate</strong></p> */}
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.universityInformation}</p>
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.country}</p>
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.courseInformation}</p>
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.courseCode}</p>
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.professorLecturer}</p>
                         <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.numberOfPages}</p>
-                        <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{note.updatedAt}</p>
-                        <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}><span style={{ color: '#deeb34' }}>★★★★☆</span> 100 Reviews</p>
+                        <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>{new Date(note.updatedAt).toLocaleDateString()}</p>
+                        <p style={{ color: '#734dc4', fontSize: '15px', fontWeight: 500 }}>
+                            {generateAverageRatingStars(averageRating)} {averageRating !== null && averageRating !== undefined ? `${averageRating} Ratings` : ''}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -224,53 +323,71 @@ function ViewNotes() {
                 <hr style={{ border: 'none', borderTop: '2px solid #ccc', width: 'calc(100% - 200px)', margin: '0 auto' }} />
             </div>
 
-            <div className="container">
+            <div style={{ paddingLeft: 100, paddingRight: 100, paddingBottom: 30 }}>
                 <div className="row">
-
                     <div className="col-md-6" style={{ paddingRight: 100 }}>
                         <h5 style={{ paddingTop: 50, color: '#734dc4', fontSize: '20px' }}>Notes Preview</h5>
-                        <iframe src={note.previewUploadP} title="My Resume" style={{ width: '100%', height: '360px', border: '1px solid #000' }}></iframe>
+                        <iframe
+                            src={note.previewUploadP}
+                            title="My Resume"
+                            style={{ width: '100%', height: '300px', border: '1px solid #000' }}
+                        ></iframe>
                     </div>
                     <div className="col-md-6">
                         <h5 style={{ paddingTop: 50, color: '#734dc4', fontSize: '20px' }}>Customer Review</h5>
-                        <div style={{ border: '1px solid #ccc', borderRadius: '5px', padding: '15px', marginBottom: '20px' }}>
-                            <div className="row">
-                                <div className="col-sm-3">
-                                    <img src="/reviewer-2.png" alt="Pr" className="rounded-circle img-fluid" style={{ width: '80px', height: '80px' }} />
-                                </div>
-                                <div className="col-sm-9">
-                                    <p style={{ margin: '0' }}>Richard Brown</p>
-                                    <h5 style={{ margin: '0' }}><span style={{ color: '#deeb34' }}>★★★★☆</span> 4 out of 5 stars</h5>
-                                    <p style={{ margin: '0' }}>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut</p>
-                                </div>
-                            </div>
-                            <hr />
-                            <div className="row">
-                                <div className="col-sm-3">
-                                    <img src="/reviewer-1.png" alt="Profi" className="rounded-circle img-fluid" style={{ width: '80px', height: '80px' }} />
-                                </div>
-                                <div className="col-sm-9">
-                                    <p style={{ margin: '0' }}>Richard Brown</p>
-                                    <h5 style={{ margin: '0' }}><span style={{ color: '#deeb34' }}>★★★★☆</span> 4 out of 5 stars</h5>
-                                    <p style={{ margin: '0' }}>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut</p>
-                                </div>
-                            </div>
-                            <hr />
-                            <div className="row">
-                                <div className="col-sm-3">
-                                    <img src="/reviewer-3.png" alt="Prof" className="rounded-circle img-fluid" style={{ width: '80px', height: '80px' }} />
-                                </div>
-                                <div className="col-sm-9">
-                                    <p style={{ margin: '0' }}>Richard Brown</p>
-                                    <h5 style={{ margin: '0' }}><span style={{ color: '#deeb34' }}>★★★★☆</span> 4 out of 5 stars</h5>
-                                    <p style={{ margin: '0' }}>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut</p>
-                                </div>
-                            </div>
+                        <div
+                            style={{
+                                border: '1px solid #ccc',
+                                borderRadius: '5px',
+                                padding: '15px',
+                                marginBottom: '20px',
+                                overflowY: 'auto',
+                                maxHeight: '300px',
+                                width: '500px',
+                            }}
+                        >
+                            {reviews.length > 0 ? (
+                                reviews.map((review, index) => (
+                                    <div key={index} style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <div style={{ flexGrow: 1 }}>
+                                            <div className="row">
+                                                <div className="col-sm-4">
+                                                    <img
+                                                        src={review.profilePicture}
+                                                        alt={review.name}
+                                                        className="rounded-circle img-fluid"
+                                                        style={{ width: '70px', height: '70px' }}
+                                                    />
+                                                </div>
+                                                <div className="col-sm-8">
+                                                    <p style={{ margin: '0', fontSize: '14px' }}>{review.buyerName}</p>
+                                                    <h5 style={{ margin: '0', fontSize: '20px' }}>
+                                                        {renderStars(review.rating)} {review.rating} out of 5 stars
+                                                    </h5>
+                                                    <p style={{ margin: '0', fontSize: '14px' }}>{review.comment}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {isAdmin && (
+                                            <button
+                                                className="btn btn-sm btn-danger"
+                                                onClick={() => handleDeleteReview(review.id)}
+                                                style={{ marginLeft: '10px', height: '30px' }}
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                        {index < reviews.length - 1 && <hr style={{ margin: '8px 0' }} />}
+                                    </div>
+                                ))
+                            ) : (
+                                <p>No reviews available.</p>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
-
+            <ToastContainer />
         </div>
     )
 }

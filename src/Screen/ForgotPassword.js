@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import '../css/Login.css';
+import { Box, Paper, Typography, TextField, Button, Alert } from '@mui/material';
 import api from '../Services/api';
+import { showAlert } from '../Utility/ConfirmBox';
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -8,48 +9,78 @@ function ForgotPassword() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             await api.post('/forgotPassword', { email });
             setPasswordUpdateSuccess(true);
             console.log("mail sent");
         } catch (error) {
-            alert('Error in sending email: ' + error.response.data.error);
+            const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
+            showAlert('Error: ' + errorMsg, "error");
         }
     };
 
     return (
-        <div className="login-container">
-            <div className="row">
-                <div className="logo">
-                    <img src="top-logo.png" alt="Logo" />
-                </div>
-                <div className="col-md-12 d-flex justify-content-center align-items-center ">
-                    <div className="login-form">
-                        <div className="login-text">
-                            <h1 >Forgot Password?</h1>
-                            <p >Enter your Email Address to reset password</p>
-                        </div>
-                        {passwordUpdateSuccess && ( // Conditionally render success message
-                            <p className="login-success">
-                                <span className="tick" style={{ color: 'green' }}>&#10004;</span> Your New Password send over the Mail Address!
-                            </p>
-                        )}
+        <Box
+            sx={{
+                minHeight: '100vh',
+                backgroundImage: `url('/loginbg.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+            }}
+        >
+            <Box sx={{ mb: 3 }}>
+                <img src="top-logo.png" alt="Logo" style={{ maxWidth: '200px' }} />
+            </Box>
 
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="email">Email Address<span className="required">*</span></label>
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" placeholder="Enter your Email" required />
-                            </div>
-                            <button type="submit" className="btn-login">
-                                SUBMIT
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
+            <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: '100%', textAlign: 'center' }}>
+                <Typography variant="h4" gutterBottom sx={{ color: '#734dc4' }}>
+                    Forgot Password?
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                    Enter your Email Address to reset password
+                </Typography>
+
+                {passwordUpdateSuccess && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        <strong>&#10004;</strong> Your new password has been sent to your email address!
+                    </Alert>
+                )}
+
+                <Box component="form" onSubmit={handleSubmit}>
+                    <TextField
+                        label="Email Address"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        fullWidth
+                        margin="normal"
+                    />
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        FF
+                        sx={{
+                            mt: 2,
+                            backgroundColor: '#734dc4',
+                            '&:hover': {
+                                backgroundColor: '#5e3ca8',
+                            },
+                        }}
+                    >
+                        SUBMIT
+                    </Button>
+                </Box>
+            </Paper>
+        </Box>
+    );
 }
 
-export default ForgotPassword
+export default ForgotPassword;

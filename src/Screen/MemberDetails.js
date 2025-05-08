@@ -4,6 +4,10 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css';
 import '../css/allPublishNotes.css';
 import api from '../Services/api';
+import { showConfirm } from '../Utility/ConfirmBox'; 
+import { showErrorToast} from '../Utility/ToastUtility'; 
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 
 function MemberDetails() {
@@ -52,23 +56,22 @@ function MemberDetails() {
 
         const fetchDownloadData = async () => {
             try {
-                const url = `http://localhost:5000/api/getUserNotesByEmail/${email}`;
-                const req = await fetch(url);
-                const res = await req.json();
-
-                if (res.message) {
-                    setDownloadData([]);
-                    setDownloadFilter([]);
-                } else {
-                    setDownloadData(res);
-                    setDownloadFilter(res);
-                }
-            } catch (error) {
-                console.error('Error fetching download data:', error);
+              const url = `/getUserNotesByEmail/${email}`;  // Use the relative URL since baseURL is defined in api.js
+              const response = await api.get(url);  // Use axios instance to make the GET request
+          
+              if (response.data.message) {
                 setDownloadData([]);
                 setDownloadFilter([]);
+              } else {
+                setDownloadData(response.data);
+                setDownloadFilter(response.data);
+              }
+            } catch (error) {
+              console.error('Error fetching download data:', error);
+              setDownloadData([]);
+              setDownloadFilter([]);
             }
-        };
+          };
 
         fetchUser();
         fetchDownloadData();
@@ -91,19 +94,27 @@ function MemberDetails() {
     const handleView2 = (id) => {
         navigate(`/downloadNotes/${id}`);
     };
-    const handleDownload = (filePath) => {
-        if (!filePath) {
-            alert("No attachment available for download");
-            return;
-        }
-        const link = document.createElement("a");
-        link.href = filePath;
-        link.setAttribute("download", "");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+    const handleDownload = async (fileUrlsString) => {
+        const confirmed = await showConfirm("Do you really want to download this Note?");
+        if (!confirmed) return;
 
+        try {
+            const zip = new JSZip();
+            const urls = fileUrlsString.split(',');
+
+            for (const fileUrl of urls) {
+                const response = await api.get(fileUrl.trim(), { responseType: 'blob' });
+                const fileName = fileUrl.split('/').pop();
+                zip.file(fileName, response.data);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'NotesBundle.zip');
+        } catch (error) {
+            console.error("Download error:", error);
+            showErrorToast('Could not download the ZIP file.');
+        }
+    };
     const downloadColumns = [
         {
             name: "SR NO.",

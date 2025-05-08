@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../Services/api';
-import { toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
 
 const EditAdministrator = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const EditAdministrator = () => {
         const response = await api.get(`/users/${email}`);
         setUser(response.data);
       } catch (error) {
-        toast.error('Failed to fetch user details.');
+        showErrorToast('Failed to fetch user details.');
       }
     };
     fetchUser();
@@ -65,10 +66,10 @@ const EditAdministrator = () => {
 
     try {
       await api.put(`/users/${email}`, user);
-      toast.success('User updated successfully');
+      showSuccessToast('User updated successfully');
       setTimeout(() => navigate('/administrator'), 2000);
     } catch (error) {
-      toast.error('Failed to update user. Please try again.');
+      showErrorToast('Failed to update user. Please try again.');
     }
   };
 
@@ -114,6 +115,7 @@ const EditAdministrator = () => {
           </button>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Banner from '../Component/banner';
 import api from '../Services/api';
-import { getUserEmail } from '../Services/auth';
-
+import { getUserEmail, getUserRole } from '../Services/auth';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import {
+    Box, TextField, Typography, Button, Paper, MenuItem, Select, InputLabel, FormControl, Avatar, Input
+} from '@mui/material';
 
 function UserProfile() {
     const [firstName, setFirstName] = useState('');
@@ -11,55 +15,46 @@ function UserProfile() {
     const [gender, setGender] = useState('');
     const [dob, setDob] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [phoneNumberCode, setphoneNumberCode] = useState('');
+    const [phoneNumberCode, setPhoneNumberCode] = useState('+91');
     const [address1, setAddress1] = useState('');
     const [address2, setAddress2] = useState('');
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
-    const [zipCode, setzipCode] = useState('');
+    const [zipCode, setZipCode] = useState('');
     const [country, setCountry] = useState('');
     const [university, setUniversity] = useState('');
     const [college, setCollege] = useState('');
     const [profilePicture, setProfilePicture] = useState(null);
-    const handleFirstNameChange = (event) => {
-        const newFirstName = event.target.value.replace(/[^a-zA-Z ]/g, ''); // Restrict to alphabets and spaces
-        setFirstName(newFirstName);
-    };
+    const isAdmin = getUserRole() === 'Admin' || getUserRole() === 'SAdmin';
 
-    const handleLastNameChange = (event) => {
-        const newLastName = event.target.value.replace(/[^a-zA-Z ]/g, ''); // Restrict to alphabets and spaces
-        setLastName(newLastName);
-    };
     useEffect(() => {
-        const userEmail = getUserEmail();
-        setEmail(userEmail);
+        setEmail(getUserEmail());
     }, []);
+
     useEffect(() => {
-        // Fetch user data based on the email from the server
         const fetchUserData = async () => {
-            const userEmail = getUserEmail();
             try {
-                const response = await api.get(`/users/${userEmail}`);
-                const userData = response.data;
-                setFirstName(userData.firstName);
-                setLastName(userData.lastName);
-                setGender(userData.gender);
-                setDob(userData.dob);
-                setPhoneNumber(userData.phoneNumber);
-                setAddress1(userData.address1);
-                setAddress2(userData.address2);
-                setCity(userData.city);
-                setState(userData.state);
-                setzipCode(userData.zipCode);
-                setCountry(userData.country);
-                setUniversity(userData.university);
-                setCollege(userData.college);
-                if (userData.profilePicture && userData.profilePicture.data) {
-                    const imageData = new Uint8Array(userData.profilePicture.data); // Convert buffer data to Uint8Array
-                    const base64Image = arrayBufferToBase64(imageData); // Convert Uint8Array to base64
-                    setProfilePicture(`data:image/png;base64,${base64Image}`);
+                const response = await api.get(`/users/${getUserEmail()}`);
+                const data = response.data;
+                setFirstName(data.firstName || '');
+                setLastName(data.lastName || '');
+                setGender(data.gender || '');
+                setDob(data.dob || '');
+                setPhoneNumber(data.phoneNumber || '');
+                setAddress1(data.address1 || '');
+                setAddress2(data.address2 || '');
+                setCity(data.city || '');
+                setState(data.state || '');
+                setZipCode(data.zipCode || '');
+                setCountry(data.country || '');
+                setUniversity(data.university || '');
+                setCollege(data.college || '');
+
+                if (data.profilePicture?.data) {
+                    const byteArray = new Uint8Array(data.profilePicture.data);
+                    const base64 = arrayBufferToBase64(byteArray);
+                    setProfilePicture(`data:image/png;base64,${base64}`);
                 }
-                console.log(userData);
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -67,12 +62,32 @@ function UserProfile() {
 
         fetchUserData();
     }, []);
+
+    const arrayBufferToBase64 = (buffer) => {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    };
+
+    const handleProfilePictureChange = (e) => {
+        setProfilePicture(e.target.files[0]);
+    };
+
+    const handleFirstNameChange = (e) => {
+        setFirstName(e.target.value.replace(/[^a-zA-Z ]/g, ''));
+    };
+
+    const handleLastNameChange = (e) => {
+        setLastName(e.target.value.replace(/[^a-zA-Z ]/g, ''));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Create form data to send both user data and profile picture
             const formData = new FormData();
-            formData.append('profilePicture', profilePicture);
             formData.append('firstName', firstName);
             formData.append('lastName', lastName);
             formData.append('email', email);
@@ -88,152 +103,109 @@ function UserProfile() {
             formData.append('country', country);
             formData.append('university', university);
             formData.append('college', college);
+            if (profilePicture instanceof File) {
+                formData.append('profilePicture', profilePicture);
+            }
 
             await api.put(`/users/${email}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-            console.log("update done");
-            // window.location.reload(); 
+
+            showSuccessToast('User updated successfully!');
+            setTimeout(() => window.location.reload(), 3000);
         } catch (error) {
-            // Handle error
-            console.error('Error updating user profile:', error);
+            console.error('Update failed:', error);
+            showErrorToast('Error updating user profile.');
         }
     };
-    const handleProfilePictureChange = (event) => {
-        const file = event.target.files[0];
-        setProfilePicture(file);
-    };
-    const arrayBufferToBase64 = (buffer) => {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
-    };
+
     return (
-        <div>
-            <Banner text="User Profile" imageHeight="250px" />
+        <Box>
+            <Banner text={isAdmin ? 'Admin User Profile' : 'User Profile'} imageHeight="250px" />
+            <Box display="flex" justifyContent="center" mt={4}>
+                <Paper elevation={4} sx={{ p: 4, width: { xs: '95%', md: '70%' }, borderRadius: 3 }}>
+                    <Typography variant="h5" color="#734dc4" mb={2}>Basic Profile Details</Typography>
+                    <form onSubmit={handleSubmit}>
+                        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
+                            <Box flex={1}>
+                                <TextField label="First Name" value={firstName} onChange={handleFirstNameChange} fullWidth required />
+                                <TextField label="Email" value={email} disabled fullWidth margin="normal" />
+                                <FormControl fullWidth margin="normal" required>
+                                    <InputLabel>Gender</InputLabel>
+                                    <Select value={gender} onChange={(e) => setGender(e.target.value)} label="Gender">
+                                        <MenuItem value="">Select</MenuItem>
+                                        <MenuItem value="male">Male</MenuItem>
+                                        <MenuItem value="female">Female</MenuItem>
+                                        <MenuItem value="other">Other</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <Button variant="outlined" component="label" sx={{ mt: 2, display: 'flex', alignItems: 'center',color:'#734dc4' }}>
+                                    <Input
+                                        type="file"
+                                        hidden
+                                        accept="image/*"
+                                        onChange={handleProfilePictureChange}
+                                        sx={{ display: 'none' }} 
+                                    />
+                                    Upload Profile Picture
+                                </Button>
+                               
+                            </Box>
+                            <Box flex={1}>
+                                <TextField label="Last Name" value={lastName} onChange={handleLastNameChange} fullWidth required />
+                                <TextField type="date" sx={{ marginBottom: 3 }} label="Date of Birth" value={dob} onChange={(e) => setDob(e.target.value)} fullWidth margin="normal" InputLabelProps={{ shrink: true }} required />
+                                <Box display="flex" gap={1}>
+                                    <FormControl sx={{ width: '30%' }} required>
+                                        <InputLabel>Code</InputLabel>
+                                        <Select value={phoneNumberCode} onChange={(e) => setPhoneNumberCode(e.target.value)} label="Code">
+                                            <MenuItem value="+91">+91</MenuItem>
+                                            <MenuItem value="+92">+92</MenuItem>
+                                            <MenuItem value="+93">+93</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <TextField type="tel" label="Phone Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} fullWidth inputProps={{ maxLength: 10 }} required />
+                                </Box>
+                                {profilePicture && typeof profilePicture === 'string' && (
+                                    <Avatar src={profilePicture} sx={{ width: 48, height: 48, ml: 2,mt:2 }} />
+                                )}
+                            </Box>
+                        </Box>
 
-            <div className="container d-flex justify-content-center">
-                <form onSubmit={handleSubmit} className="col-md-8">
-                    <h1 style={{ color: '#734dc4', paddingTop: '15px', fontSize: '24px' }}>Basic Profile Details</h1>
-                    <div className="row">
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="name">First Name<span className="required">*</span></label>
-                                <input type="text" value={firstName} onChange={handleFirstNameChange} className="form-control" id="first name" placeholder="Enter your first name" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="email">Email <span className="required">*</span></label>
-                                <input type="email" className="form-control" id="email" placeholder="Enter your email address" value={email} readOnly required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="Gender">Gender<span className="required">*</span></label>
-                                <select className="form-control" value={gender} onChange={(e) => setGender(e.target.value)} id="gender" name="gender" >
-                                    <option value="">Select your gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="profilePicture">Profile Picture</label>
-                                <input type="file" onChange={handleProfilePictureChange} className="form-control" id="profilePicture" accept="image/*" />
-                            </div>
-                        </div>
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="name">Last Name<span className="required">*</span></label>
-                                <input type="text" value={lastName} onChange={handleLastNameChange} className="form-control" id="lastname" placeholder="Enter your Last name" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="DOB">Date Of Birth <span className="required">*</span></label>
-                                <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="form-control" id="dob" placeholder="Enter your date of birth" required />
-                            </div>
+                        {!isAdmin && (
+                            <>
+                                <Typography variant="h6" color="#734dc4" mt={4}>Address Details</Typography>
+                                <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
+                                    <Box flex={1}>
+                                        <TextField label="Address Line 1" value={address1} onChange={(e) => setAddress1(e.target.value)} fullWidth required />
+                                        <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} fullWidth margin="normal" required />
+                                        <TextField label="Zip Code" value={zipCode} onChange={(e) => setZipCode(e.target.value)} fullWidth margin="normal" required />
+                                    </Box>
+                                    <Box flex={1}>
+                                        <TextField label="Address Line 2" value={address2} onChange={(e) => setAddress2(e.target.value)} fullWidth required />
+                                        <TextField label="State" value={state} onChange={(e) => setState(e.target.value)} fullWidth margin="normal" required />
+                                        <TextField label="Country" value={country} onChange={(e) => setCountry(e.target.value)} fullWidth margin="normal" required />
+                                    </Box>
+                                </Box>
 
-                            <div className="row">
-                                <label htmlFor="phoneNumberCode">Phone Number<span className="required">*</span></label>
-                                <div className="col-md-3">
-                                    <div className="form-group">
-                                        <select value={phoneNumberCode} onChange={(e) => setphoneNumberCode(e.target.value)} className="form-control" id="phoneNumberCode" required>
-                                            <option value="+91">+91</option>
-                                            <option value="+92">+92</option>
-                                            <option value="+93">+93</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="col-md-9">
-                                    <div className="form-group">
-                                        <input type="text" maxLength={10} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="form-control" id="phoneNumber" placeholder="Enter your phone number" required />
-                                    </div>
-                                </div>
-                            </div>
-                            {profilePicture && (
-                                <div style={{ paddingTop: '20px', paddingBottom: '1px' }}>
-                                    <img src={profilePicture} alt="Profile" className="rounded-circle img-fluid" width="38" height="38" />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>Address Details</h1>
-                    <div className="row">
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="address1">Address Line 1<span className="required">*</span></label>
-                                <input type="text" value={address1} onChange={(e) => setAddress1(e.target.value)} className="form-control" id="address1" placeholder="Enter your address" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="city">City<span className="required">*</span></label>
-                                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="form-control" id="city" placeholder="Enter your city" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="zipCode">zipCode<span className="required">*</span></label>
-                                <input type="text" value={zipCode} onChange={(e) => setzipCode(e.target.value)} className="form-control" id="zipCode" placeholder="Enter your zipCode" required />
-                            </div>
-                        </div>
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="address2">Address Line 2<span className="required">*</span></label>
-                                <input type="text" value={address2} onChange={(e) => setAddress2(e.target.value)} className="form-control" id="address2" placeholder="Enter your address" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="state">State<span className="required">*</span></label>
-                                <input type="text" value={state} onChange={(e) => setState(e.target.value)} className="form-control" id="state" placeholder="Enter your state" required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="subject">Country<span className="required">*</span></label>
-                                <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} className="form-control" id="country" placeholder="Enter your country" required />
-                            </div>
-                        </div>
-                    </div>
-                    <h1 style={{ color: '#734dc4', paddingTop: '10px', fontSize: '24px' }}>University and collage information</h1>
-                    <div className="row">
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="university">University<span className="required">*</span></label>
-                                <input type="text" value={university} onChange={(e) => setUniversity(e.target.value)} className="form-control" id="university" placeholder="Enter your University" required />
-                            </div>
-                        </div>
-                        <div className="col-md-6">
-                            <div className="form-group">
-                                <label htmlFor="collage">Collage<span className="required">*</span></label>
-                                <input type="text" value={college} onChange={(e) => setCollege(e.target.value)} className="form-control" id="collage" placeholder="Enter your Collage" required />
-                            </div>
-                        </div>
-                    </div>
+                                <Typography variant="h6" color="#734dc4" mt={4}>University & College Info</Typography>
+                                <Box display="flex" gap={3}>
+                                    <TextField label="University" value={university} onChange={(e) => setUniversity(e.target.value)} fullWidth required />
+                                    <TextField label="College" value={college} onChange={(e) => setCollege(e.target.value)} fullWidth required />
+                                </Box>
+                            </>
+                        )}
 
-                    <div className="row">
-                        <div className="col-12 pt-2 text-start"> <button style={{ backgroundColor: '#734dc4', color: 'white' }} type="submit" className=" btn btn-sm">SUBMIT</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    )
+                        <Box mt={4} textAlign="left">
+                            <Button type="submit" variant="contained" sx={{ backgroundColor: '#734dc4', '&:hover': { backgroundColor: '#5a3ca8' } }}>
+                                SUBMIT
+                            </Button>
+                        </Box>
+                    </form>
+                </Paper>
+            </Box>
+            <ToastContainer />
+        </Box>
+    );
 }
 
-export default UserProfile
+export default UserProfile;

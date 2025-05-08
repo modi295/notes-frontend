@@ -3,6 +3,11 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css';
 import '../css/allPublishNotes.css';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../Services/api';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import { showAlert } from '../Utility/ConfirmBox'; 
+
 
 function Administrator() {
   const navigate = useNavigate();
@@ -103,8 +108,9 @@ function Administrator() {
 
   const fetchData = async () => {
     try {
-      const req = await fetch(`http://localhost:5000/api/users`);
-      const res = await req.json();
+      const response = await api.get('/users');
+      const res = response.data;
+  
       if (Array.isArray(res)) {
         setData(res);
       } else {
@@ -115,6 +121,8 @@ function Administrator() {
       setData();
     }
   };
+  
+
 
   const handleView = (email) => {
     navigate(`/memberDetail/${email}`);
@@ -138,42 +146,37 @@ function Administrator() {
 
   const updateUserStatus = async () => {
     if (!remark.trim()) {
-      alert("Please enter a remark before making user Inactive.");
+      showAlert("Please enter a remark before making user Inactive.", "info");
       return;
     }
-
+  
     try {
-      const userResponse = await fetch(`http://localhost:5000/api/users/${EmailId}`);
-      if (!userResponse.ok) throw new Error('Failed to fetch user data');
-
-      const userData = await userResponse.json();
-
+      const userResponse = await api.get(`/users/${EmailId}`);
+      const userData = userResponse.data;
+  
       const updatedUserData = {
         ...userData,
         active: 'N',
         remark: remark.trim()
       };
-
-      const updateResponse = await fetch(`http://localhost:5000/api/users/${EmailId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUserData)
-      });
-
-      if (updateResponse.ok) {
+  
+      const updateResponse = await api.put(`/users/${EmailId}`, updatedUserData);
+  
+      if (updateResponse.status === 200) {
         setData(prevData => prevData.map(user =>
           user.email === EmailId ? { ...user, active: 'N', remark: remark.trim() } : user
         ));
-        alert(`User status updated successfully.`);
+        showSuccessToast('User status updated successfully.');
         closeUnpublishModal();
       } else {
-        alert(`Failed to update user status`);
+        showErrorToast('Failed to update user status.');
       }
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('Error updating user status.');
+      showErrorToast('Error updating user status.');
     }
   };
+  
 
   useEffect(() => {
     fetchData();
@@ -251,6 +254,8 @@ function Administrator() {
           </div>
         </div>
       )}
+      <ToastContainer />
+
     </div>
   );
 }

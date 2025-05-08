@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getUserEmail } from '../Services/auth';
+import api from '../Services/api';
 
 function Dashboard() {
   const [data, setData] = useState({
@@ -16,18 +17,13 @@ function Dashboard() {
   useEffect(() => {
     const fetchUserNotesData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/getDashboardData/${email}`);
-        const result = await response.json();
-        if (response.ok) {
-          setData(result);
-        } else {
-          console.error('Error fetching data:', result.message);
-        }
+        const response = await api.get(`/getDashboardData/${email}`);
+        setData(response.data);
       } catch (error) {
-        console.error('API request failed:', error);
+        console.error('API request failed:', error.response?.data?.message || error.message);
       }
     };
-
+  
     fetchUserNotesData();
   }, [email]);
 

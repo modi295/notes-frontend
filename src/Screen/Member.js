@@ -3,6 +3,11 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import '../css/allPublishNotes.css';
 import { useNavigate } from 'react-router-dom';
+import api from '../Services/api';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import { showAlert } from '../Utility/ConfirmBox';
+
 
 function Member() {
     const navigate = useNavigate();
@@ -149,21 +154,22 @@ function Member() {
 
     const fetchData = async () => {
         try {
-            const req = await fetch(`http://localhost:5000/api/users`);
-            const res = await req.json();
-            if (Array.isArray(res)) {
-                setData(res);
-                setFilter(res);
-            } else {
-                setData([]);
-                setFilter([]);
-            }
-        } catch (error) {
-            console.error('Error fetching data:', error);
+          const response = await api.get('/users');
+          const res = response.data;
+      
+          if (Array.isArray(res)) {
+            setData(res);
+            setFilter(res);
+          } else {
             setData([]);
             setFilter([]);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setData([]);
+          setFilter([]);
         }
-    };
+      };      
 
 
     const handleView = (email) => {
@@ -193,42 +199,44 @@ function Member() {
 
     const updateUserStatus = async () => {
         if (!remark.trim()) {
-            alert("Please enter a remark before making user Inactive.");
-            return;
+          showAlert("Please enter a remark before making user Inactive.", "info");
+          return;
         }
-
+      
         try {
-            const userResponse = await fetch(`http://localhost:5000/api/users/${EmailId}`);
-            if (!userResponse.ok) throw new Error('Failed to fetch user data');
-
-            const userData = await userResponse.json();
-
-            const updatedUserData = {
-                ...userData,
-                active: 'N',
-                remark: remark.trim()
-            };
-
-            const updateResponse = await fetch(`http://localhost:5000/api/users/${EmailId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedUserData)
-            });
-
-            if (updateResponse.ok) {
-                setData(prevData => prevData.map(user =>
-                    user.email === EmailId ? { ...user, active: 'N', remark: remark.trim() } : user
-                ));
-                alert(`User status updated successfully.`);
-                closeUnpublishModal();
-            } else {
-                alert(`Failed to update user status`);
-            }
+          const userResponse = await api.get(`/users/${EmailId}`);
+          
+          if (userResponse.status !== 200) throw new Error('Failed to fetch user data');
+      
+          const userData = userResponse.data;
+      
+          const updatedUserData = {
+            ...userData,
+            active: 'N',
+            remark: remark.trim(),
+          };
+      
+          const updateResponse = await api.put(`/users/${EmailId}`, updatedUserData, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+      
+          if (updateResponse.status === 200) {
+            setData((prevData) =>
+              prevData.map((user) =>
+                user.email === EmailId ? { ...user, active: 'N', remark: remark.trim() } : user
+              )
+            );
+            showSuccessToast("User status updated successfully.");
+            closeUnpublishModal();
+          } else {
+            showErrorToast("Failed to update user status. Please try again.");
+          }
         } catch (error) {
-            console.error('Error updating user status:', error);
-            alert('Error updating user status.');
+          console.error("Error updating user status:", error);
+          showErrorToast("Error updating user status. Please try again.");
         }
-    };
+      };
+      
 
 
     useEffect(() => { fetchData(); }, []);
@@ -244,7 +252,8 @@ function Member() {
 
 
     return (
-        <div style={{ paddingTop: '10px' }}>
+        <div style={{ paddingTop: '100px' }}>
+            <h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>Members</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -292,6 +301,7 @@ function Member() {
                     </div>
                 </div>
             )}
+            <ToastContainer />
         </div>
     );
 }

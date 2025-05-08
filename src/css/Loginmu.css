@@ -1,0 +1,52 @@
+.login-container {
+    background-image: url("/public/loginbg.jpg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .login-form {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    width: 400px;
+  }
+  
+  .login-text {
+    color: #734dc4;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  
+  .login-subtext {
+    color: gray;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .login-success {
+    color: green;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .error-message {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .link {
+    color: #734dc4;
+    text-decoration: none;
+  }
+  
+  .btn-login {
+    margin-top: 20px;
+    background-color: #734dc4 !important;
+  }
+  

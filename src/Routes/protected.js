@@ -2,6 +2,8 @@ import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isLoggedIn } from '../Services/auth';
 import { getUserRole } from '../Services/auth';
+import { showAlert } from '../Utility/ConfirmBox'; 
+
 
 function Protected(props) {
   const { Component, access = false } = props;
@@ -20,7 +22,7 @@ function Protected(props) {
       navigate('/login');
     } else {
       if (access && !canAccessComponent(window.location.pathname)) {
-        alert("you don't have rights to access this page");
+        showAlert("you don't have rights to access this page","error");
         navigate('/');
       }
     }

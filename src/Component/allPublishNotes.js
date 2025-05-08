@@ -3,6 +3,13 @@ import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import '../css/allPublishNotes.css';
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../Services/api';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { showConfirm, showAlert } from '../Utility/ConfirmBox';
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+
 
 function AllPublishNotes() {
     const navigate = useNavigate();
@@ -13,7 +20,7 @@ function AllPublishNotes() {
     const [unpublishId, setUnpublishId] = useState(null);
     const [remark, setRemark] = useState('');
     const [selectedNote, setSelectedNote] = useState({ title: '', category: '' });
-    const { id } = useParams();
+    const { email } = useParams();
 
     const columns = [
         {
@@ -94,7 +101,7 @@ function AllPublishNotes() {
                     onMouseLeave={() => setActiveDropdown(null)}
                 >
                     <img
-                        src="dots.png"
+                        src="/dots.png"
                         alt="Action"
                         style={{ cursor: 'pointer' }}
                     />
@@ -151,18 +158,55 @@ function AllPublishNotes() {
     const handleView2 = (id) => {
         navigate(`/downloadNotes/${id}`);
     };
-    const handleDownload = (filePath) => {
-        if (!filePath) {
-            alert("No attachment available for download");
-            return;
+    //single file download
+    // const handleDownload = async (fileUrl) => {
+    //     const confirmed = await showConfirm("Do you really want to download this Note?");
+    //     if (!confirmed) return;
+
+    //     try {
+    //         console.log(fileUrl);
+    //       const response = await api.get(fileUrl, { responseType: 'blob' });
+    //       const blob = response.data;
+
+    //       const blobUrl = window.URL.createObjectURL(blob);
+    //       const fileName = fileUrl.split('/').pop();
+
+    //       const link = document.createElement('a');
+    //       link.href = blobUrl;
+    //       link.download = fileName;
+    //       document.body.appendChild(link);
+    //       link.click();
+    //       document.body.removeChild(link);
+
+    //       window.URL.revokeObjectURL(blobUrl);
+    //     } catch (error) {
+    //       console.error("Download error:", error);
+    //       showErrorToast('Could not download the file.');
+    //     }
+    //   };
+
+    const handleDownload = async (fileUrlsString) => {
+        const confirmed = await showConfirm("Do you really want to download this Note?");
+        if (!confirmed) return;
+
+        try {
+            const zip = new JSZip();
+            const urls = fileUrlsString.split(',');
+
+            for (const fileUrl of urls) {
+                const response = await api.get(fileUrl.trim(), { responseType: 'blob' });
+                const fileName = fileUrl.split('/').pop();
+                zip.file(fileName, response.data);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'NotesBundle.zip');
+        } catch (error) {
+            console.error("Download error:", error);
+            showErrorToast('Could not download the ZIP file.');
         }
-        const link = document.createElement("a");
-        link.href = filePath;
-        link.setAttribute("download", "");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
+
     const openUnpublishModal = (id, title, category) => {
         setUnpublishId(id);
         setSelectedNote({ title, category });
@@ -177,53 +221,52 @@ function AllPublishNotes() {
 
     const updateStatus = async () => {
         if (!remark.trim()) {
-            alert("Please enter a remark before rejecting.");
+            showAlert("Please enter a remark before rejecting.", "info");
             return;
         }
 
         try {
-            const noteResponse = await fetch(`http://localhost:5000/api/notesById/${unpublishId}`);
-            if (!noteResponse.ok) throw new Error('Failed to fetch the note data');
+            const noteResponse = await api.get(`/notesById/${unpublishId}`);
+            const noteData = noteResponse.data;
 
-            const noteData = await noteResponse.json();
             const updatedNoteData = {
                 ...noteData,
                 publishFlag: 'U',
                 remark: remark.trim()
             };
 
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedNoteData)
-            });
+            const updateResponse = await api.put(`/updateNotesStatus/${unpublishId}`, updatedNoteData);
 
-            if (updateResponse.ok) {
-                setData(prevData => prevData.map(note =>
-                    note.id === unpublishId ? { ...note, publishFlag: 'U', remark: remark.trim() } : note
-                ));
-                alert(`Note rejected successfully.`);
+            if (updateResponse.status === 200) {
+                setData(prevData =>
+                    prevData.map(note =>
+                        note.id === unpublishId ? { ...note, publishFlag: 'U', remark: remark.trim() } : note
+                    )
+                );
+
+                showSuccessToast('Note rejected successfully.');
                 closeUnpublishModal();
             } else {
-                alert(`Failed to update status`);
+                showErrorToast('Failed to update status');
             }
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Error updating status.');
+            showErrorToast('Error updating status');
         }
     };
+
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                let url = `http://localhost:5000/api/allpublishNotes`;
-                if (id) {
-                    if (id.includes("@")) {
-                        url = `http://localhost:5000/api/publishNotes/${id}`;
-                    }
+                let url = `/allpublishNotes`;
+                if (email && email.includes("@")) {
+                    url = `/publishNotes/${email}`;
                 }
-                const req = await fetch(url);
-                const res = await req.json();
+                console.log(url);
+                console.log(email);
+                const response = await api.get(url);
+                const res = response.data;
 
                 if (Array.isArray(res)) {
                     setData(res);
@@ -243,7 +286,7 @@ function AllPublishNotes() {
         };
 
         fetchData();
-    }, [id]);
+    }, [email]);
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -261,7 +304,8 @@ function AllPublishNotes() {
 
 
     return (
-        <div style={{ paddingTop: '10px' }}>
+        <div style={{ paddingTop: '100px' }}>
+            <h1 style={{ marginLeft: '115px', color: '#734dc4', fontSize: '30px' }}>All publish Notes</h1>
             <div className='container d-flex justify-content-center'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -271,7 +315,6 @@ function AllPublishNotes() {
                             data={filter}
                             pagination
                             paginationPerPage={5}
-                            // selectableRows
                             fixedHeader
                             selectableRowsHighlight
                             highlightOnHover
@@ -310,6 +353,7 @@ function AllPublishNotes() {
                         />
                     </div>
                 </div>
+                <ToastContainer />
             </div>
             {showModal && (
                 <div className="modal-overlay">

@@ -2,6 +2,12 @@ import React, { useEffect, useState } from 'react';
 import DataTable from 'react-data-table-component';
 import '../css/grid.css'
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../Services/api';
+import { showAlert, showConfirm } from '../Utility/ConfirmBox'; 
+import { ToastContainer } from 'react-toastify';
+import { showSuccessToast, showErrorToast } from '../Utility/ToastUtility';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 function UnderReview() {
     const navigate = useNavigate();
@@ -12,7 +18,7 @@ function UnderReview() {
     const [unpublishId, setUnpublishId] = useState(null);
     const [remark, setRemark] = useState('');
     const [selectedNote, setSelectedNote] = useState({ title: '', category: '' });
-    const { id } = useParams();
+    const { email } = useParams();
 
     const columns = [
         {
@@ -99,11 +105,12 @@ function UnderReview() {
                     onMouseLeave={() => setActiveDropdown(null)}
                 >
                     <img
-                        src="dots.png"
+                        src="/dots.png"
                         alt="More"
                         title="More Actions"
                         style={{ cursor: 'pointer' }}
                     />
+                    
                     {activeDropdown === row.id && (
                         <div style={{
                             position: 'absolute',
@@ -144,18 +151,31 @@ function UnderReview() {
     const handleView = (id) => {
         navigate(`/viewNotes/${id}`);
     };
-    const handleDownload = (filePath) => {
-        if (!filePath) {
-            alert("No attachment available for download");
-            return;
+   
+    const handleDownload = async (fileUrlsString) => {
+        const confirmed = await showConfirm("Do you really want to download this Note?");
+        if (!confirmed) return;
+
+        try {
+            const zip = new JSZip();
+            const urls = fileUrlsString.split(',');
+
+            for (const fileUrl of urls) {
+                const response = await api.get(fileUrl.trim(), { responseType: 'blob' });
+                const fileName = fileUrl.split('/').pop();
+                zip.file(fileName, response.data);
+            }
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            saveAs(zipBlob, 'NotesBundle.zip');
+        } catch (error) {
+            console.error("Download error:", error);
+            showErrorToast('Could not download the ZIP file.');
         }
-        const link = document.createElement("a");
-        link.href = filePath;
-        link.setAttribute("download", "");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
+    
+    
+
     const updateStatus = async (id, status) => {
         const getStatusMessage = (status) => {
             switch (status) {
@@ -173,40 +193,43 @@ function UnderReview() {
                     return "Unknown";
             }
         };
-        const confirmChange = window.confirm(`Are you sure you want to change the status to ${getStatusMessage(status)}?`);
-        if (!confirmChange) return;
-
+    
+        const confirmed = await showConfirm(`Are you sure you want to change the status to ${getStatusMessage(status)}?`);
+        if (!confirmed) return;
+    
         try {
-            const noteResponse = await fetch(`http://localhost:5000/api/notesById/${id}`);
-            if (!noteResponse.ok) {
+            const noteResponse = await api.get(`/notesById/${id}`);
+            
+            if (noteResponse.status !== 200) {
                 throw new Error('Failed to fetch the note data');
             }
-
-            const noteData = await noteResponse.json();
+    
+            const noteData = noteResponse.data;
             const updatedNoteData = {
                 ...noteData,
                 publishFlag: status
             };
+    
             console.log(updatedNoteData);
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedNoteData) // Sending all data with updated publishFlag
-            });
-
-            if (updateResponse.ok) {
+    
+            const updateResponse = await api.put(`/updateNotesStatus/${id}`, updatedNoteData);
+    
+            if (updateResponse.status === 200) {
                 setData(prevData => prevData.map(note =>
                     note.id === id ? { ...note, publishFlag: status } : note
                 ));
-                alert(`Status updated to ${status}`);
+                showSuccessToast(`Status updated to ${status}`);
             } else {
-                alert(`Failed to update status`);
+                showErrorToast("Failed to update status.");
             }
+    
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Error updating status.');
+            showErrorToast("Error updating status.");
         }
     };
+    
+    
     const openUnpublishModal = (id, title, category) => {
         setUnpublishId(id);
         setSelectedNote({ title, category });
@@ -220,63 +243,64 @@ function UnderReview() {
     };
     const updateStatusR = async () => {
         if (!remark.trim()) {
-            alert("Please enter a remark before rejecting.");
+            showAlert("Please enter a remark before rejecting.", "info");
             return;
         }
-
+    
         try {
-            const noteResponse = await fetch(`http://localhost:5000/api/notesById/${unpublishId}`);
-            if (!noteResponse.ok) throw new Error('Failed to fetch the note data');
-
-            const noteData = await noteResponse.json();
+            const noteResponse = await api.get(`/notesById/${unpublishId}`);
+    
+            if (noteResponse.status !== 200) {
+                throw new Error('Failed to fetch the note data');
+            }
+    
+            const noteData = noteResponse.data;
             const updatedNoteData = {
                 ...noteData,
                 publishFlag: 'R',
                 remark: remark.trim()
             };
-
-            const updateResponse = await fetch(`http://localhost:5000/api/updateNotesStatus/${unpublishId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedNoteData)
-            });
-
-            if (updateResponse.ok) {
+    
+            const updateResponse = await api.put(`/updateNotesStatus/${unpublishId}`, updatedNoteData);
+    
+            if (updateResponse.status === 200) {
                 setData(prevData => prevData.map(note =>
-                    note.id === unpublishId ? { ...note, publishFlag: 'U', remark: remark.trim() } : note
+                    note.id === unpublishId ? { ...note, publishFlag: 'R', remark: remark.trim() } : note
                 ));
-                alert(`Note rejected successfully.`);
+                showSuccessToast("Note rejected successfully.");
                 closeUnpublishModal();
             } else {
-                alert(`Failed to update status`);
+                showErrorToast("Failed to update status.");
             }
+    
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Error updating status.');
+            showErrorToast("Error updating status.");
         }
     };
+    
 
+   
     useEffect(() => {
         const fetchData = async () => {
             try {
-                let url = `http://localhost:5000/api/underReviewNotes`;
-                if (id) {
-                    if (id.includes("@")) {
-                        url = `http://localhost:5000/api/underReviewNotes/${id}`;
-                    }
-                }
-                const req = await fetch(url);
-                const res = await req.json();
+                let url = '/underReviewNotes'; // Simplified URL as the base URL is already included in api.js
 
-                if (Array.isArray(res)) {
-                    setData(res);
-                    setFilter(res);
-                    const publishers = [...new Set(res.map(item => item.userFullName))];
+                if (email && email.includes("@")) {
+                    url = `/underReviewNotes/${email}`;
+                }
+
+                const response = await api.get(url);
+
+                if (Array.isArray(response.data)) {
+                    setData(response.data);
+                    setFilter(response.data);
+                    const publishers = [...new Set(response.data.map(item => item.userFullName))];
                     setDistinctPublishers(publishers);
                 } else {
                     setData([]);
                     setFilter([]);
-                    console.warn('No data available:', res.message || 'Unexpected response format');
+                    console.warn('No data available:', response.data.message || 'Unexpected response format');
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -286,7 +310,7 @@ function UnderReview() {
         };
 
         fetchData();
-    }, [id]);
+    }, [email]);
 
     useEffect(() => {
         const result = data.filter(item => {
@@ -374,6 +398,7 @@ function UnderReview() {
                     </div>
                 </div>
             )}
+            <ToastContainer />
         </div>
     );
 }
